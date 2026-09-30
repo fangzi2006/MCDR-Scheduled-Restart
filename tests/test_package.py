@@ -214,13 +214,13 @@ def test_on_load_and_unload_end_to_end():
         assert '已禁用计划' in disable_source.text()
 
         remove_source = FakeCommandSource(PermissionLevel.OWNER, server=server)
-        run_command(root, remove_source, '!!srestart remove 4')
+        run_command(root, remove_source, '!!srestart remove 2')
         assert '已删除计划' in remove_source.text()
 
         status_source = FakeCommandSource(PermissionLevel.OWNER, server=server)
         run_command(root, status_source, '!!srestart status')
         assert '总开关' in status_source.text()
-        assert '3 个' in status_source.text()
+        assert '1 个' in status_source.text()
 
         # 玩家进服提醒不会因为没有计划而报错
         scheduled_restart.on_player_joined(server, 'Steve', None)

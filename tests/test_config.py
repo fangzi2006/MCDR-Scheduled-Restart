@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 
 import pytest
 
@@ -42,9 +43,13 @@ def test_default_config_is_valid_and_silent():
     assert config.errors == []
     assert config.warnings == []
     assert config.needs_save is False
-    assert len(config.schedules) == 3
+    assert len(config.schedules) == 1
     assert all(not schedule.enabled for schedule in config.schedules)
-    assert len(config.default_notifications) == 5
+    assert len(config.default_notifications) == 1
+    # 默认配置里不应出现需要 JSON 转义的字符（说明文字里不要写带引号的示例）
+    dumped = json.dumps(config.to_raw(), ensure_ascii=False)
+    assert '\\"' not in dumped
+    assert '\\\\' not in dumped
 
 
 def test_default_config_round_trip():

@@ -7,14 +7,25 @@ import json
 
 import pytest
 
-from scheduled_restart.config import DEFAULT_CONFIG, Config
+from scheduled_restart.config import DEFAULT_CONFIG, Config, default_schedule_entry
 from scheduled_restart.config_store import ConfigFileEditor
 
 from fakes import FakeServer
 
 
-def make_editor(server: FakeServer) -> ConfigFileEditor:
-    server.seed_config_file()
+def three_schedules() -> dict:
+    """编辑器测试要用多条计划来验证「只改指定那一条」，这里自己造一份"""
+    raw = copy.deepcopy(DEFAULT_CONFIG)
+    raw['schedules'] = [
+        default_schedule_entry(name='计划一', enabled=False, cron='0 4 * * *'),
+        default_schedule_entry(name='计划二', enabled=False, cron='0 5 * * *'),
+        default_schedule_entry(name='计划三', enabled=False, cron='0 6 * * *'),
+    ]
+    return raw
+
+
+def make_editor(server: FakeServer, raw: dict = None) -> ConfigFileEditor:
+    server.seed_config_file(raw)
     return ConfigFileEditor(server)
 
 
@@ -50,8 +61,8 @@ def test_read_raw_reads_existing_file():
 
 def test_set_enabled_writes_file():
     server = FakeServer()
-    editor = make_editor(server)
-    assert read_file(server)['schedules'][0]['enabled'] is False    # 默认示例都是关闭的
+    editor = make_editor(server, three_schedules())
+    assert read_file(server)['schedules'][0]['enabled'] is False    # 造出来的计划都是关闭的
 
     ok, message = editor.set_enabled(0, True)
     assert ok is True
@@ -94,7 +105,7 @@ def test_set_enabled_on_broken_cron_adds_hint():
 
 def test_set_all_enabled():
     server = FakeServer()
-    editor = make_editor(server)
+    editor = make_editor(server, three_schedules())
     ok, message = editor.set_all_enabled(True)
     assert ok is True and '全部 3 个计划' in message
     assert all(entry['enabled'] is True for entry in read_file(server)['schedules'])
@@ -188,7 +199,7 @@ def test_add_schedule_rejects_empty_and_numeric_name():
 
 def test_remove_schedule():
     server = FakeServer()
-    editor = make_editor(server)
+    editor = make_editor(server, three_schedules())
     before = read_file(server)['schedules']
     ok, message = editor.remove_schedule(1)
     assert ok is True
@@ -211,16 +222,17 @@ def test_remove_schedule_out_of_range():
 def test_remove_schedule_keeps_other_content():
     """用户自己加的字段不能被我们抹掉"""
     server = FakeServer()
-    server.config_raw = copy.deepcopy(DEFAULT_CONFIG)
-    server.config_raw['我的备注'] = '不要删我'
-    server.config_raw['schedules'][0]['我自己加的字段'] = 42
-    editor = make_editor(server)
+    raw = three_schedules()
+    raw['我的备注'] = '不要删我'
+    raw['schedules'][0]['我自己加的字段'] = 42
+    server.config_raw = raw
+    editor = make_editor(server, raw)
 
     editor.set_enabled(1, True)
-    raw = read_file(server)
-    assert raw['我的备注'] == '不要删我'
-    assert raw['schedules'][0]['我自己加的字段'] == 42
-    assert raw['schedules'][1]['enabled'] is True
+    saved = read_file(server)
+    assert saved['我的备注'] == '不要删我'
+    assert saved['schedules'][0]['我自己加的字段'] == 42
+    assert saved['schedules'][1]['enabled'] is True
 
 
 def test_write_is_atomic_leaves_no_temp_file():

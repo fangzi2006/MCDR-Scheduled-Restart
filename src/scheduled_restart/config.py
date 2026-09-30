@@ -565,24 +565,24 @@ class Config:
 # --------------------------------------------------------------------------- #
 
 DEFAULT_README = [
-    '本文件由 MCDR 插件 scheduled_restart 生成，修改后可用 !!srestart reload 热重载。',
-    'cron 使用 Linux cron 格式：5 个字段为「分 时 日 月 周」，6 个字段为「秒 分 时 日 月 周」。',
+    '本文件由 MCDR 插件 scheduled_restart 生成，改完用 !!srestart reload 热重载。',
+    'cron 使用 Linux cron 格式：5 个字段是「分 时 日 月 周」，6 个字段是「秒 分 时 日 月 周」。',
     '  示例：0 4 * * *      每天 04:00',
     '        30 3 * * 1     每周一 03:30',
     '        0 5 1 * *      每月 1 日 05:00',
     '        0 */6 * * *    每 6 小时',
     '        @daily         每天 00:00（支持 @hourly/@daily/@weekly/@monthly/@yearly 宏）',
     '提醒写在 notifications 数组里，每条是一个对象：',
-    '  advance_seconds 提前多少秒发送（也支持 "advance": "5m" 这种写法）',
-    '  type            chat（聊天框）/ title（大标题）/ actionbar / command（执行指令）',
-    '  message         聊天框文本；title/subtitle 用于大标题；command 用于 type=command',
-    '  times           大标题的淡入/停留/淡出时间（秒），如 {"fade_in": 1, "stay": 4, "fade_out": 1}',
+    '  advance_seconds 提前多少秒发送（也可以写 advance 字段，值用 5m / 1h30m / 1天2小时 这类时长文本）',
+    '  type            chat 聊天框 / title 大标题 / actionbar 物品栏上方 / command 执行指令',
+    '  message         聊天框文本；title 与 subtitle 用于大标题；command 用于 type 为 command 时',
+    '  times           大标题的淡入、停留、淡出时间（秒），三个数字分别写在 fade_in / stay / fade_out 里',
     '  color           可选的聊天框颜色（yellow、#FFAA00 等），也可直接在文本里写 §e 之类的旧版颜色代码',
-    '  sound           可选，例如 "minecraft:block.note_block.pling"',
-    '  sound_source    音效频道，默认 master；1.12 及更早的服务端填 "" 以省略该参数',
-    '  sound_position  音效位置："@s"（默认，每个玩家在自己位置听到，需要 1.13+）、',
-    '                  坐标文本（如 "~ ~ ~"、"100 64 100"）或 ""（省略坐标与音量）',
-    '                  注意 playsound 的语法里坐标在音量前面，写坐标才能自定义音量/音调',
+    '  sound           可选，例如 minecraft:block.note_block.pling',
+    '  sound_source    音效频道，默认 master；1.12 及更早的服务端留空以省略该参数',
+    '  sound_position  音效位置，默认 @s（每个玩家在自己位置听到，需要 1.13+）；',
+    '                  也可以写坐标文本（如 ~ ~ ~ 或 100 64 100），或留空表示省略坐标与音量',
+    '                  注意 playsound 的语法里坐标在音量前面，要自定义音量/音调就必须给坐标',
     '文本占位符：{remaining} {remaining_seconds} {remaining_minutes} {time} {date} {datetime} {schedule} {cron}',
     '重启方式 restart_method：mcdr_restart（默认，MCDR 重启服务器）/ stop（只停服）/ stop_exit（停服并退出 MCDR）',
     '                        / custom（执行 custom_command）/ none（只发提醒不重启）',
@@ -622,30 +622,6 @@ DEFAULT_NOTIFICATIONS: List[Dict[str, Any]] = [
         type='chat',
         message='§e[定时重启] §f服务器将在 §b{remaining} §f后重启（§b{time}§f）',
     ),
-    _default_notification(
-        advance_seconds=60,
-        type='chat',
-        message='§e[定时重启] §f服务器将在 §b{remaining} §f后重启，请提前找安全的地方下线',
-    ),
-    _default_notification(
-        advance_seconds=30,
-        type='title',
-        title='§e服务器重启倒计时',
-        subtitle='§f剩余 §b{remaining}',
-        times={'fade_in': 0.5, 'stay': 3.0, 'fade_out': 0.5},
-    ),
-    _default_notification(
-        advance_seconds=10,
-        type='title',
-        title='§c即将重启',
-        subtitle='§f剩余 §b{remaining}',
-        times={'fade_in': 0.2, 'stay': 2.0, 'fade_out': 0.2},
-    ),
-    _default_notification(
-        advance_seconds=0,
-        type='chat',
-        message='§c[定时重启] §f服务器正在重启，请稍后重新连接',
-    ),
 ]
 
 
@@ -684,16 +660,6 @@ DEFAULT_CONFIG: Dict[str, Any] = {
             name='示例-每天凌晨4点重启（默认关闭，改 enabled 为 true 即生效）',
             enabled=False,
             cron='0 4 * * *',
-        ),
-        default_schedule_entry(
-            name='示例-每周一凌晨3点半重启（默认关闭）',
-            enabled=False,
-            cron='30 3 * * 1',
-        ),
-        default_schedule_entry(
-            name='示例-每月1日凌晨5点重启（默认关闭）',
-            enabled=False,
-            cron='0 5 1 * *',
         ),
     ],
 }

@@ -45,7 +45,7 @@ plugins/scheduled_restart/scheduled_restart/__init__.py
 
 首次加载后会自动生成配置：`config/scheduled_restart/config.json`（内容见 [examples/config.json](examples/config.json)）。
 
-> 默认配置里 3 个示例计划都是 `"enabled": false`，**开箱不会自己重启**，改完再用 `!!srestart reload` 生效，
+> 默认配置里就 1 个示例计划、而且它是 `"enabled": false` 的，**开箱不会自己重启**；改完用 `!!srestart reload` 生效，
 > 或者直接用 `!!srestart add <名字> <cron>` 新建一个计划。
 
 ---
@@ -110,9 +110,9 @@ mcdr-scheduled-restart/
 | `join_message` | string | 见示例 | 进服私聊内容，支持占位符 |
 | `log_history` | bool | `true` | 是否把每次重启写入 `config/scheduled_restart/history.jsonl` |
 | `history_size` | int | `100` | 历史文件过大时保留的最近条数 |
-| `default_notifications` | array | 5 条 | **默认提醒组**，计划里 `use_default_notifications: true` 时使用 |
+| `default_notifications` | array | 1 条示例 | **默认提醒组**，计划里 `use_default_notifications: true` 时使用 |
 | `schedules` | array | 3 个示例 | 重启计划列表 |
-| `_readme` | array | — | 写在配置文件里的说明，仅供阅读，可随意修改 |
+| `_readme` | array | — | 写在配置文件里的说明，仅供阅读，可随意修改（JSON 不支持注释，所以说明放在这个字段里；配置文件里的示例都已写成不需要转义的纯文本） |
 
 ### `schedules[]`（计划）
 
@@ -390,8 +390,8 @@ uv pip install --python .venv/Scripts/python.exe mcdreforged pytest     # Window
 
 ```bash
 python tools/build_plugin.py
-# 已生成插件包: dist/scheduled_restart-v1.1.1.mcdr（35639 字节）
-# sha256: 5d1474c5da9f07854804ff2aaa8135201751533356117932fd733e8b14207f74
+# 已生成插件包: dist/scheduled_restart-v1.1.1.mcdr（35530 字节）
+# sha256: c32e93f8f09b1f4d0ed351be4fcbb18579416d77187d60d08c44813b23855284
 ```
 
 > 上面是本次构建的真实输出。注意 sha256 每次重新打包都会变（zip 里记录了文件的修改时间），
@@ -518,7 +518,8 @@ gh release create v1.1.1 dist/scheduled_restart-v1.1.1.mcdr \
 
 场景 ③ **带 UTF-8 BOM 的配置文件**（Windows 记事本、PowerShell `Set-Content -Encoding UTF8` 的默认行为）：
 
-* 修复前实测：MCDR 读取失败 → 按 `regen` 策略把**用户配置重置成默认的 3 个示例计划**（计划直接丢失）
+* 修复前实测：MCDR 读取失败 → 按 `regen` 策略把**用户配置重置成默认的示例计划**（计划直接丢失；
+  当时的默认配置里有 3 个示例，现在是 1 个）
 * 修复后：读取前自动去 BOM，用户计划完整保留（`初始配置: [('BOM保留测试', True), ('计划里就是关闭的', False)]`）；
   文件彻底坏掉时会先备份成 `config.json.broken-<时间>` 再重新生成
 
