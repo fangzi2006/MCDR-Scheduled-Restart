@@ -1,4 +1,4 @@
-﻿[MCDR] [2026-09-30 16:33:13.553] [TaskExecutor/WARNING] [metadata.py:236(create)]: Plugin ID of SoloPlugin(state=<PluginState.LOADING: 2>, path=WindowsPath('plugins/e2e_driver.py')) not found, use fallback id e2e_driver instead
+[MCDR] [2026-09-30 16:33:13.553] [TaskExecutor/WARNING] [metadata.py:236(create)]: Plugin ID of SoloPlugin(state=<PluginState.LOADING: 2>, path=WindowsPath('plugins/e2e_driver.py')) not found, use fallback id e2e_driver instead
 [MCDR] [2026-09-30 16:33:13.553] [TaskExecutor/WARNING] [metadata.py:358(create)]: SoloPlugin(state=<PluginState.LOADING: 2>, path=WindowsPath('plugins/e2e_driver.py')) doesn't specific a version, use fallback version 0.0.0
 [MCDR] [2026-09-30 16:33:13.584] [TaskExecutor/INFO] [plugin_manager.py:216(__load_plugin)]: Plugin e2e_driver@0.0.0 loaded
 [MCDR] [2026-09-30 16:33:18.110] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 已创建计划 #3 凌晨测试（每天 07:00，cron: 0 7 * * *）；默认已启用，并使用顶层 default_notifications 提醒组；配置已生效：共 3 个计划，其中 2 个已启用：BOM保留测试（每天 09:00）、凌晨测试（每天 07:00）；0 条警告，0 条错误

@@ -61,6 +61,9 @@ _RESTART_METHOD_ALIASES = {
 
 NOTIFICATION_TYPES = ('chat', 'title', 'actionbar', 'command')
 
+#: ``sound_position`` 的特殊值：在每个玩家自己的位置播放音效（1.13+，用 execute as/at 实现）
+PER_PLAYER_POSITION = '@s'
+
 _CANONICAL_METHOD = {
     'mcdr_restart': 'mcdr_restart',
     'stop': 'stop',
@@ -201,6 +204,9 @@ class Notification:
     color: Optional[str] = None
     sound: Optional[str] = None
     sound_source: str = 'master'
+    #: 音效播放位置："@s"（默认，每个玩家在自己位置听到，需要 1.13+）、
+    #: 坐标文本（如 "~ ~ ~" / "100 64 100"）或空字符串（省略坐标与音量音调）
+    sound_position: str = PER_PLAYER_POSITION
     sound_volume: float = 1.0
     sound_pitch: float = 1.0
     command: str = ''
@@ -229,6 +235,7 @@ class Notification:
             'color': self.color,
             'sound': self.sound,
             'sound_source': self.sound_source,
+            'sound_position': self.sound_position,
             'sound_volume': round(self.sound_volume, 3),
             'sound_pitch': round(self.sound_pitch, 3),
             'command': self.command,
@@ -273,6 +280,18 @@ def _parse_notification(raw: Any, path: str, issues: _Issues) -> Optional[Notifi
     notification.color = _read_optional_str(raw, 'color', None, path, issues)
     notification.sound = _read_optional_str(raw, 'sound', None, path, issues)
     notification.sound_source = _read_str(raw, 'sound_source', 'master', path, issues)
+    if 'sound_position' not in raw:
+        notification.sound_position = PER_PLAYER_POSITION
+    elif raw['sound_position'] is None:
+        notification.sound_position = ''
+    elif isinstance(raw['sound_position'], str):
+        notification.sound_position = raw['sound_position'].strip()
+    else:
+        issues.warn(
+            f'{path}.sound_position',
+            f'需要字符串（"@s"、坐标文本或 ""），实际为 {raw["sound_position"]!r}，已回退默认值 {PER_PLAYER_POSITION!r}'
+        )
+        notification.sound_position = PER_PLAYER_POSITION
     notification.sound_volume = _read_number(raw, 'sound_volume', 1.0, path, issues, minimum=0.0, maximum=1000.0)
     notification.sound_pitch = _read_number(raw, 'sound_pitch', 1.0, path, issues, minimum=0.0, maximum=1000.0)
     notification.command = _read_str(raw, 'command', '', path, issues)
@@ -560,6 +579,10 @@ DEFAULT_README = [
     '  times           大标题的淡入/停留/淡出时间（秒），如 {"fade_in": 1, "stay": 4, "fade_out": 1}',
     '  color           可选的聊天框颜色（yellow、#FFAA00 等），也可直接在文本里写 §e 之类的旧版颜色代码',
     '  sound           可选，例如 "minecraft:block.note_block.pling"',
+    '  sound_source    音效频道，默认 master；1.12 及更早的服务端填 "" 以省略该参数',
+    '  sound_position  音效位置："@s"（默认，每个玩家在自己位置听到，需要 1.13+）、',
+    '                  坐标文本（如 "~ ~ ~"、"100 64 100"）或 ""（省略坐标与音量）',
+    '                  注意 playsound 的语法里坐标在音量前面，写坐标才能自定义音量/音调',
     '文本占位符：{remaining} {remaining_seconds} {remaining_minutes} {time} {date} {datetime} {schedule} {cron}',
     '重启方式 restart_method：mcdr_restart（默认，MCDR 重启服务器）/ stop（只停服）/ stop_exit（停服并退出 MCDR）',
     '                        / custom（执行 custom_command）/ none（只发提醒不重启）',
@@ -584,6 +607,7 @@ def _default_notification(**kwargs) -> Dict[str, Any]:
         'color': None,
         'sound': None,
         'sound_source': 'master',
+        'sound_position': PER_PLAYER_POSITION,
         'sound_volume': 1.0,
         'sound_pitch': 1.0,
         'command': '',

@@ -31,7 +31,7 @@
 ```bash
 git clone https://github.com/fangzi2006/mcdr-scheduled-restart.git
 cd mcdr-scheduled-restart
-python tools/build_plugin.py          # 生成 dist/scheduled_restart-v1.1.0.mcdr
+python tools/build_plugin.py          # 生成 dist/scheduled_restart-v1.1.1.mcdr
 ```
 
 **方式三：目录插件**
@@ -152,7 +152,8 @@ mcdr-scheduled-restart/
 | `color` | string \| null | `null` | 颜色名（`yellow`、`red`、`gold`…）或 `#RRGGBB`；也可以直接写在文本里用 `§e` |
 | `sound` | string \| null | `null` | 音效 ID，如 `minecraft:block.note_block.pling`，会在提醒后播放 |
 | `sound_source` | string | `master` | 音效频道；老版本（1.8~1.12）服务端可设为 `""` 以省略该参数 |
-| `sound_volume` / `sound_pitch` | number | `1.0` | 音量 / 音调 |
+| `sound_position` | string | `"@s"` | 音效播放位置：`"@s"` = 每个玩家在自己位置听到（1.13+，用 `execute as @a at @s` 实现）；坐标文本（`"~ ~ ~"`、`"100 64 100"`）= 固定位置播放（1.8+ 都能用，`~ ~ ~` 在控制台执行时等于世界出生点）；`""` = 省略坐标与音量音调 |
+| `sound_volume` / `sound_pitch` | number | `1.0` | 音量 / 音调（`sound_position` 为空时这两项会被忽略） |
 | `command` | string | `""` | `type=command` 时下发的指令，支持占位符 |
 
 一个「多条提醒」的完整例子（也支持简写 `advance`）：
@@ -301,6 +302,29 @@ Windows 自带的时区数据库 Python 读不到，需要 `pip install tzdata` 
 由 MCDR 负责重启选 `mcdr_restart`；如果用 systemd/screen/宝塔等外部守护负责拉起，选 `stop`
 （或 `stop_exit`，让 MCDR 也退出，避免卡住）。
 
+**Q：配了 `sound` 却听不到声音 / 报坐标错误？**
+Java 的 `playsound` 语法是 `playsound <音效> [<频道>] <目标> [<坐标>] [<音量>] [<音调>]`，
+**坐标排在音量前面**：想自定义音量/音调就必须先给坐标，否则 `… @a 1 1` 里的 `1 1`
+会被当成坐标（坐标需要 x y z 三个分量）而报错。
+
+插件默认用 `"sound_position": "@s"`，生成的是
+
+```
+execute as @a at @s run playsound <音效> master @s ~ ~ ~ <音量> <音调>
+```
+
+也就是**每个玩家在自己位置听到**（1.13+）。如果你更希望音效锚定在某个固定位置，
+把 `sound_position` 写成坐标文本；如果服务端是 **1.12 及更早**（没有 `execute as/at`），
+用 `"sound_position": "~ ~ ~"` + `"sound_source": ""`：
+
+```json
+{ "advance_seconds": 30, "type": "title", "title": "§e重启倒计时",
+  "sound": "minecraft:block.note_block.pling",
+  "sound_source": "", "sound_position": "~ ~ ~" }
+```
+
+> 提醒也支持 `type: "command"`，你可以完全自己写 `playsound`/`title` 指令绕过这些约定。
+
 **Q：配置写错了会怎样？**
 * 单个字段类型写错 → 使用默认值，并记一条警告，插件照常运行（会顺手把规范化后的配置写回文件）
 * 整个计划的 `cron` 写错 → 只跳过该计划，记一条错误，**不写回文件**（保留你写的内容方便修正）
@@ -366,8 +390,8 @@ uv pip install --python .venv/Scripts/python.exe mcdreforged pytest     # Window
 
 ```bash
 python tools/build_plugin.py
-# 已生成插件包: dist/scheduled_restart-v1.1.0.mcdr（34257 字节）
-# sha256: 7b87e6373c52de2b357a1c326c94e99052d653acbebfcdc964135f3b2c9c441e
+# 已生成插件包: dist/scheduled_restart-v1.1.1.mcdr（35639 字节）
+# sha256: 5d1474c5da9f07854804ff2aaa8135201751533356117932fd733e8b14207f74
 ```
 
 > 上面是本次构建的真实输出。注意 sha256 每次重新打包都会变（zip 里记录了文件的修改时间），
@@ -420,7 +444,7 @@ Compress-Archive -Path * -DestinationPath ..\dist\scheduled_restart.mcdr -Force
 打包后确认结构正确：
 
 ```bash
-python -m zipfile -l dist/scheduled_restart-v1.1.0.mcdr
+python -m zipfile -l dist/scheduled_restart-v1.1.1.mcdr
 # 应当只看到：mcdreforged.plugin.json、scheduled_restart/__init__.py、scheduled_restart/*.py
 ```
 
@@ -429,8 +453,8 @@ python -m zipfile -l dist/scheduled_restart-v1.1.0.mcdr
 ### 校验插件包
 
 ```bash
-sha256sum dist/scheduled_restart-v1.1.0.mcdr                          # Linux / macOS
-Get-FileHash dist\scheduled_restart-v1.1.0.mcdr -Algorithm SHA256     # Windows PowerShell
+sha256sum dist/scheduled_restart-v1.1.1.mcdr                          # Linux / macOS
+Get-FileHash dist\scheduled_restart-v1.1.1.mcdr -Algorithm SHA256     # Windows PowerShell
 ```
 
 把这个值与 Release 说明里公布的 sha256 比对，就能确认下载到的附件没有被改过或损坏。
@@ -447,10 +471,10 @@ Get-FileHash dist\scheduled_restart-v1.1.0.mcdr -Algorithm SHA256     # Windows 
 2. **装进 MCDR 看日志**：把 `.mcdr` 放进 `plugins/`，启动后应当看到
 
    ```
-   [MCDR] [TaskExecutor/INFO]: Plugin scheduled_restart@1.1.0 loaded
+   [MCDR] [TaskExecutor/INFO]: Plugin scheduled_restart@1.1.1 loaded
    ```
 
-   并在控制台看到 `[scheduled_restart] v1.1.0 已加载：…`；用 `!!MCDR plugin list` 也能看到它。
+   并在控制台看到 `[scheduled_restart] v1.1.1 已加载：…`；用 `!!MCDR plugin list` 也能看到它。
 
 3. **不想打包**也可以直接用「目录插件」模式调试：把 `src/` 里的内容复制到
    `plugins/scheduled_restart/`，改完代码执行 `!!MCDR plugin reload scheduled_restart` 即可，
@@ -459,16 +483,16 @@ Get-FileHash dist\scheduled_restart-v1.1.0.mcdr -Algorithm SHA256     # Windows 
 ### 发布到 GitHub Release
 
 ```bash
-git tag -a v1.1.0 -m "v1.1.0"
+git tag -a v1.1.1 -m "v1.1.1"
 git push origin main --follow-tags
 
 # 附带插件包发布（装了 GitHub CLI 的话）
-gh release create v1.1.0 dist/scheduled_restart-v1.1.0.mcdr \
-  --title "v1.1.0" --notes-file CHANGELOG.md      # 或 --generate-notes 让 GitHub 自动生成
+gh release create v1.1.1 dist/scheduled_restart-v1.1.1.mcdr \
+  --title "v1.1.1" --notes-file CHANGELOG.md      # 或 --generate-notes 让 GitHub 自动生成
 ```
 
-没有 `gh` 就在网页上操作：**Releases → Draft a new release** → 选 tag `v1.1.0`
-→ 说明可直接复制 [CHANGELOG.md](CHANGELOG.md) 里对应版本的段落 → 上传 `dist\scheduled_restart-v1.1.0.mcdr` → Publish。
+没有 `gh` 就在网页上操作：**Releases → Draft a new release** → 选 tag `v1.1.1`
+→ 说明可直接复制 [CHANGELOG.md](CHANGELOG.md) 里对应版本的段落 → 上传 `dist\scheduled_restart-v1.1.1.mcdr` → Publish。
 
 > 仓库里**不放**构建产物（`dist/` 已被忽略），插件包一律通过 Release 附件分发：
 > 这样每次改代码不会给仓库历史塞进二进制文件，而使用者仍能在 Release 页面直接下载。

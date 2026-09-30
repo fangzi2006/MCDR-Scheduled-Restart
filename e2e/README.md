@@ -1,4 +1,4 @@
-﻿# 真实 MCDReforged 端到端测试
+# 真实 MCDReforged 端到端测试
 
 `tests/` 里的单元测试用的是「假服务器接口」。为了确认插件在**真实 MCDR 进程**里也能跑通，
 这里放了一套最小可复现的端到端环境，用它跑过三类场景：
@@ -31,7 +31,7 @@ cp <本目录>/driver_plugin.py plugins/e2e_driver.py
 #    write_server_output_to_log_file: true
 
 # 4. 放入插件与测试用配置
-cp ../dist/scheduled_restart-v1.1.0.mcdr plugins/
+cp ../dist/scheduled_restart-v1.1.1.mcdr plugins/
 #    场景 A 的配置见下方；场景 B/C 用随便一份配置即可
 
 # 5. 跑起来
@@ -154,3 +154,22 @@ Windows 记事本、以及 Windows PowerShell 5.1 的 `Set-Content -Encoding UTF
 2. **带 BOM 的配置文件会导致用户计划被重置**：见场景 C，现在读取前自动去 BOM，
    无法解析时先备份（测试 `test_bom_is_stripped_so_plans_are_not_lost`、
    `test_broken_config_is_backed_up_before_regeneration`）。
+
+## 已知盲区（这套工装测不到什么）
+
+* **不校验 Minecraft 指令语法**：`fake_server.py` 只是把收到的指令原样记进
+  `commands.log`，不会像真实服务端那样解析参数。所以「指令拼写/参数顺序错了」这类问题
+  它抓不到——`playsound` 少了坐标就是这样漏过去的（后来由真实服务端实测发现，
+  见 CHANGELOG v1.1.1）。**参数顺序类问题请务必在真实服务端上验收一次**，
+  或者用 `type: "command"` 自己写指令。
+* **不验证客户端表现**：`title`/`tellraw`/`playsound` 到底在玩家屏幕上/耳朵里是什么效果，
+  这里只能确认「MCDR 把正确的指令发给了服务端」。
+* **没有真实玩家**：`notify_on_join`（进服私聊倒计时）与 `kick_players` 只有单元测试覆盖。
+* **沙箱限制**：MCDR 必须用管道读取服务端输出，受限环境（如 DSH 的 workspace-write）
+  下 MCDR 起不来（`ServerStartError`），需要在更宽权限下运行本测试。
+
+> 另外：本工装自己就踩过一次 BOM 的坑——`server/e2e_commands.txt` 是用
+> Windows PowerShell 的 `Set-Content -Encoding UTF8` 写的（会带 BOM），
+> 于是第一条指令被读成 `\ufeff!!srestart list`，这个 `\ufeff` 就留在了
+> `evidence/e2e_snapshots_crud.log` 里（MCDR 容忍了它，指令照常执行）。
+> 留着它当作"BOM 到处都会咬人"的现场记录。

@@ -23,7 +23,7 @@ from .config_store import ConfigFileEditor
 from .scheduler import RestartScheduler
 
 PLUGIN_ID = 'scheduled_restart'
-PLUGIN_VERSION = '1.1.0'
+PLUGIN_VERSION = '1.1.1'
 
 # 注意：这里的全局名不要用 config / scheduler，
 # 否则会遮蔽同名的子模块属性（from scheduled_restart import config 会拿到 None）

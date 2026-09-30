@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from scheduled_restart.config import Notification
+import pytest
+
+from scheduled_restart.config import PER_PLAYER_POSITION, Notification
 from scheduled_restart.notify import (
     Notifier,
     build_context,
+    build_playsound_command,
     render,
     split_legacy,
     to_json_str,
@@ -194,6 +197,7 @@ def test_send_command_notification():
 
 
 def test_send_notification_with_sound():
+    """默认 sound_position="@s"：每个玩家在自己位置听到"""
     server = FakeServer()
     notifier = Notifier(server)
     notifier.send_notification(
@@ -203,7 +207,9 @@ def test_send_notification_with_sound():
         ),
         make_context(),
     )
-    assert server.executed == ['playsound minecraft:block.note_block.pling master @a 0.5 2']
+    assert server.executed == [
+        'execute as @a at @s run playsound minecraft:block.note_block.pling master @s ~ ~ ~ 0.5 2'
+    ]
 
 
 def test_send_notification_with_sound_without_source():
@@ -213,7 +219,72 @@ def test_send_notification_with_sound_without_source():
         Notification(type='chat', message='hi', sound='note.pling', sound_source=''),
         make_context(),
     )
-    assert server.executed == ['playsound note.pling @a 1 1']
+    assert server.executed == ['execute as @a at @s run playsound note.pling @s ~ ~ ~ 1 1']
+
+
+def test_send_notification_with_fixed_sound_position():
+    """指定坐标时锚定在该位置播放（1.8+ 都能用的写法）"""
+    server = FakeServer()
+    notifier = Notifier(server)
+    notifier.send_notification(
+        Notification(
+            type='chat', message='hi', sound='note.pling',
+            sound_position='~ ~ ~', sound_volume=0.8, sound_pitch=1.2,
+        ),
+        make_context(),
+    )
+    assert server.executed == ['playsound note.pling master @a ~ ~ ~ 0.8 1.2']
+
+    server.executed.clear()
+    notifier.send_notification(
+        Notification(type='chat', message='hi', sound='note.pling', sound_position='100 64 100'),
+        make_context(),
+    )
+    assert server.executed == ['playsound note.pling master @a 100 64 100 1 1']
+
+
+def test_send_notification_with_empty_sound_position():
+    """sound_position 为空时连音量音调一起省略，绝不出现「音量被当成坐标」的写法"""
+    server = FakeServer()
+    notifier = Notifier(server)
+    notifier.send_notification(
+        Notification(type='chat', message='hi', sound='note.pling', sound_position=''),
+        make_context(),
+    )
+    assert server.executed == ['playsound note.pling master @a']
+
+
+@pytest.mark.parametrize('position,expected', [
+    ('@s', 'execute as @a at @s run playsound sound.id master @s ~ ~ ~ 0.5 2'),
+    ('~ ~ ~', 'playsound sound.id master @a ~ ~ ~ 0.5 2'),
+    ('100 64 100', 'playsound sound.id master @a 100 64 100 0.5 2'),
+    ('', 'playsound sound.id master @a'),
+])
+def test_build_playsound_command_shapes(position, expected):
+    assert build_playsound_command('sound.id', 'master', 0.5, 2.0, position) == expected
+
+
+def test_playsound_command_keeps_position_before_volume():
+    """回归守卫：Java 的 playsound 语法是 ``… <目标> [<坐标>] [<音量>] [<音调>]``，
+    坐标必须出现在音量之前，否则 ``… @a 1 1`` 会被当成坐标（需要 x y z 三个分量）而报错。"""
+
+    def inner_tokens(command: str) -> list:
+        return command.split('run ', 1)[-1].split()
+
+    for position in ('@s', '~ ~ ~', '100 64 100'):
+        tokens = inner_tokens(build_playsound_command('snd', 'master', 0.5, 2.0, position))
+        assert tokens[0] == 'playsound'
+        assert tokens[-2:] == ['0.5', '2'], tokens                    # 音量/音调在最后
+        coordinates = tokens[-5:-2]                                   # 音量的前三个 token
+        assert len(coordinates) == 3, tokens
+        assert all(
+            token == '~' or token.replace('-', '').replace('.', '').isdigit()
+            for token in coordinates
+        ), tokens                                                    # 它们必须是完整坐标
+        assert tokens[-6] in ('@a', '@s'), tokens                     # 再前面是目标选择器
+
+    # 没有坐标时，音量和音调必须一起省略（否则就会排到坐标的位置上）
+    assert inner_tokens(build_playsound_command('snd', 'master', 0.5, 2.0, ''))[-1] == '@a'
 
 
 def test_tell_chat():

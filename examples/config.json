@@ -15,6 +15,10 @@
         "  times           大标题的淡入/停留/淡出时间（秒），如 {\"fade_in\": 1, \"stay\": 4, \"fade_out\": 1}",
         "  color           可选的聊天框颜色（yellow、#FFAA00 等），也可直接在文本里写 §e 之类的旧版颜色代码",
         "  sound           可选，例如 \"minecraft:block.note_block.pling\"",
+        "  sound_source    音效频道，默认 master；1.12 及更早的服务端填 \"\" 以省略该参数",
+        "  sound_position  音效位置：\"@s\"（默认，每个玩家在自己位置听到，需要 1.13+）、",
+        "                  坐标文本（如 \"~ ~ ~\"、\"100 64 100\"）或 \"\"（省略坐标与音量）",
+        "                  注意 playsound 的语法里坐标在音量前面，写坐标才能自定义音量/音调",
         "文本占位符：{remaining} {remaining_seconds} {remaining_minutes} {time} {date} {datetime} {schedule} {cron}",
         "重启方式 restart_method：mcdr_restart（默认，MCDR 重启服务器）/ stop（只停服）/ stop_exit（停服并退出 MCDR）",
         "                        / custom（执行 custom_command）/ none（只发提醒不重启）",
@@ -48,6 +52,7 @@
             "color": null,
             "sound": null,
             "sound_source": "master",
+            "sound_position": "@s",
             "sound_volume": 1.0,
             "sound_pitch": 1.0,
             "command": ""
@@ -67,6 +72,7 @@
             "color": null,
             "sound": null,
             "sound_source": "master",
+            "sound_position": "@s",
             "sound_volume": 1.0,
             "sound_pitch": 1.0,
             "command": ""
@@ -86,6 +92,7 @@
             "color": null,
             "sound": null,
             "sound_source": "master",
+            "sound_position": "@s",
             "sound_volume": 1.0,
             "sound_pitch": 1.0,
             "command": ""
@@ -105,6 +112,7 @@
             "color": null,
             "sound": null,
             "sound_source": "master",
+            "sound_position": "@s",
             "sound_volume": 1.0,
             "sound_pitch": 1.0,
             "command": ""
@@ -124,6 +132,7 @@
             "color": null,
             "sound": null,
             "sound_source": "master",
+            "sound_position": "@s",
             "sound_volume": 1.0,
             "sound_pitch": 1.0,
             "command": ""

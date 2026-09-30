@@ -16,12 +16,14 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from mcdreforged.api.rtext import RColor, RStyle, RText, RTextBase, RTextList
 
-from .config import Notification
+from .config import PER_PLAYER_POSITION, Notification
 from .cron import format_duration_cn
 
 __all__ = [
     'Notifier',
+    'PER_PLAYER_POSITION',
     'build_context',
+    'build_playsound_command',
     'render',
     'split_legacy',
     'to_rtext',
@@ -221,6 +223,66 @@ def _to_ticks(seconds: float) -> int:
 
 
 # --------------------------------------------------------------------------- #
+#                                    音效指令                                   #
+# --------------------------------------------------------------------------- #
+
+# ``PER_PLAYER_POSITION`` 定义在 config.py（配置默认值用它），这里直接复用
+
+
+def _playsound_parts(
+        sound: str,
+        source: str,
+        target: str,
+        position: str,
+        volume: float,
+        pitch: float,
+) -> List[str]:
+    """拼 ``playsound`` 的参数
+
+    .. important::
+        Java 版的 ``playsound`` 语法是
+        ``playsound <音效> [<频道>] <目标> [<坐标>] [<音量>] [<音调>] [<最小音量>]``，
+        **坐标在音量前面**。所以只要想传音量/音调，就必须先给出坐标，
+        否则 ``... @a 1 1`` 里的 ``1 1`` 会被当成坐标（坐标需要 x y z 三个分量）而报错。
+        这里保证：音量与音调只在坐标存在时才出现。
+    """
+    parts = ['playsound', sound]
+    if source:
+        parts.append(source)
+    parts.append(target)
+    if position:
+        parts.append(position)
+        parts.append(f'{float(volume):g}')
+        parts.append(f'{float(pitch):g}')
+    return parts
+
+
+def build_playsound_command(
+        sound: str,
+        source: str = 'master',
+        volume: float = 1.0,
+        pitch: float = 1.0,
+        position: str = PER_PLAYER_POSITION,
+        target: str = '@a',
+) -> str:
+    """生成播报音效的指令
+
+    :param position: 播放位置
+
+        * ``"@s"``（默认）：每个玩家在自己位置听到，
+          生成 ``execute as @a at @s run playsound <音效> [<频道>] @s ~ ~ ~ <音量> <音调>``（需要 1.13+）
+        * 坐标文本（``"~ ~ ~"`` 或 ``"100 64 100"``）：固定位置播放，
+          生成 ``playsound <音效> [<频道>] @a <坐标> <音量> <音调>``（1.8+ 都能用；
+          注意 ``~ ~ ~`` 在控制台执行时等于世界出生点，远处的玩家听不到）
+        * 空字符串：省略坐标与音量音调，完全交给服务端默认值
+    """
+    if position == PER_PLAYER_POSITION:
+        inner = _playsound_parts(sound, source, PER_PLAYER_POSITION, '~ ~ ~', volume, pitch)
+        return f'execute as {target} at @s run ' + ' '.join(inner)
+    return ' '.join(_playsound_parts(sound, source, target, position, volume, pitch))
+
+
+# --------------------------------------------------------------------------- #
 #                                     发送器                                    #
 # --------------------------------------------------------------------------- #
 
@@ -254,6 +316,7 @@ class Notifier:
                 source=notification.sound_source,
                 volume=notification.sound_volume,
                 pitch=notification.sound_pitch,
+                position=notification.sound_position,
             )
 
     # ------------------------------------------------------------ 基础动作
@@ -279,14 +342,16 @@ class Notifier:
     def broadcast_actionbar(self, text: str, color: Optional[str] = None) -> None:
         self._server.execute('title @a actionbar ' + to_json_str(text, color))
 
-    def play_sound(self, sound: str, *, source: str = 'master', volume: float = 1.0, pitch: float = 1.0) -> None:
-        parts = ['playsound', sound]
-        if source:
-            parts.append(source)
-        parts.append('@a')
-        parts.append(f'{float(volume):g}')
-        parts.append(f'{float(pitch):g}')
-        self._server.execute(' '.join(parts))
+    def play_sound(
+            self,
+            sound: str,
+            *,
+            source: str = 'master',
+            volume: float = 1.0,
+            pitch: float = 1.0,
+            position: str = PER_PLAYER_POSITION,
+    ) -> None:
+        self.execute(build_playsound_command(sound, source, volume, pitch, position))
 
     def execute(self, command: str) -> None:
         self._server.execute(command)

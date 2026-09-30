@@ -1,4 +1,4 @@
-﻿# 真实 MCDR 运行日志摘录（由 PowerShell 捕获的控制台输出转成 UTF-8）
+# 真实 MCDR 运行日志摘录（由 PowerShell 捕获的控制台输出转成 UTF-8）
 # 说明：中文在 PowerShell 重定向捕获时会出现乱码（编码转换所致），插件自身写的 UTF-8 文件（commands.log / history.jsonl）中文正常。
 
 [MCDR] [15:25:29] [TaskExecutor/INFO]: Plugin scheduled_restart@1.0.0 loaded
