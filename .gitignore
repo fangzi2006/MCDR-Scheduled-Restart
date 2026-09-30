@@ -1,0 +1,23 @@
+# 虚拟环境与测试产物
+.venv/
+.test-tmp/
+.pytest_cache/
+.pytest-tmp/
+__pycache__/
+*.py[cod]
+
+# 打包产物（.mcdr 通过 GitHub Release 附件分发，仓库里只放源码）
+dist/
+
+# 编辑器 / 系统垃圾
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+Desktop.ini
+
+# 本地跑 MCDR 时的运行目录（如果有人把仓库直接当 MCDR 工作目录用）
+/logs/
+/server/
+/config/
+/plugins/

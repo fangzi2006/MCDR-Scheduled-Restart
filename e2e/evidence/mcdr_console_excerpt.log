@@ -1,0 +1,41 @@
+﻿# 真实 MCDR 运行日志摘录（由 PowerShell 捕获的控制台输出转成 UTF-8）
+# 说明：中文在 PowerShell 重定向捕获时会出现乱码（编码转换所致），插件自身写的 UTF-8 文件（commands.log / history.jsonl）中文正常。
+
+[MCDR] [15:25:29] [TaskExecutor/INFO]: Plugin scheduled_restart@1.0.0 loaded
+[MCDR] [15:25:29] [TaskExecutor/INFO] [scheduled_restart]: Config file loaded
+[MCDR] [15:25:29] [TaskExecutor/INFO] [scheduled_restart]: [scheduled_restart] �����߳��������1 ���ƻ���ʱ�� ����ʱ��
+[MCDR] [15:25:29] [TaskExecutor/INFO] [scheduled_restart]: [scheduled_restart] v1.0.0 �Ѽ��أ��� 1 ���ƻ������� 1 �������ã��˵���-ÿ20�루ÿ���ӣ�
+[MCDR] [15:25:29] [TaskExecutor/INFO] [scheduled_restart]: [scheduled_restart] ʹ�� !!srestart help �鿴ָ������ļ���config/scheduled_restart/config.json
+[MCDR] [15:25:29] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] ��һ��������˵���-ÿ20�� �� 2026-09-30 15:25:40��cron: */20 * * * * *����ʽ: mcdr_restart������ 5 ����
+[MCDR] [15:25:29] [ScheduledRestart/WARNING] [scheduled_restart]: [scheduled_restart] ��������ǰδ���У��������ѣ��ƻ� �˵���-ÿ20�룬��ǰ 15 �룬��ʽ chat��
+[MCDR] [15:25:29] [ScheduledRestart/WARNING] [scheduled_restart]: [scheduled_restart] ��������ǰδ���У��������ѣ��ƻ� �˵���-ÿ20�룬��ǰ 12 �룬��ʽ actionbar��
+[MCDR] [15:25:29] [MainThread/INFO]: Starting the server with command ['E:\\work\\mcdr-scheduled-restart\\.venv\\Scripts\\python.exe', 'fake_server.py']
+[MCDR] [15:25:29] [MainThread/INFO]: Server is running at PID 21776
+[Server] [15:25:29] [Server thread/INFO]: Done (0.512s)! For help, type "help"
+[MCDR] [15:25:32] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 8 �룬��ʽ title���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:25:36] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 4 �룬��ʽ command���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:25:40] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 0 �룬��ʽ chat���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:25:40] [ScheduledRestart-Worker/INFO] [scheduled_restart]: [scheduled_restart] ��ʼִ��������˵���-ÿ20�루cron: */20 * * * * *����ʽ: mcdr_restart��
+[MCDR] [15:25:40] [MainThread/INFO]: Server process stopped with code 0
+[MCDR] [15:25:40] [MainThread/INFO]: Server stopped
+[MCDR] [15:25:40] [ScheduledRestart-Worker/INFO]: Starting the server with command ['E:\\work\\mcdr-scheduled-restart\\.venv\\Scripts\\python.exe', 'fake_server.py']
+[MCDR] [15:25:40] [ScheduledRestart-Worker/INFO]: Server is running at PID 33624
+[MCDR] [15:25:40] [ScheduledRestart-Worker/INFO] [scheduled_restart]: [scheduled_restart] ����ָ�����·����˵���-ÿ20�룩
+[MCDR] [15:25:40] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] ��һ��������˵���-ÿ20�� �� 2026-09-30 15:26:00��cron: */20 * * * * *����ʽ: mcdr_restart������ 5 ����
+[Server] [15:25:40] [Server thread/INFO]: Done (0.512s)! For help, type "help"
+[MCDR] [15:25:45] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 15 �룬��ʽ chat���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:25:48] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 12 �룬��ʽ actionbar���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:25:52] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 8 �룬��ʽ title���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:25:56] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 4 �룬��ʽ command���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:26:00] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 0 �룬��ʽ chat���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:26:00] [ScheduledRestart-Worker/INFO] [scheduled_restart]: [scheduled_restart] ��ʼִ��������˵���-ÿ20�루cron: */20 * * * * *����ʽ: mcdr_restart��
+[MCDR] [15:26:00] [MainThread/INFO]: Server process stopped with code 0
+[MCDR] [15:26:00] [MainThread/INFO]: Server stopped
+[MCDR] [15:26:00] [ScheduledRestart-Worker/INFO]: Starting the server with command ['E:\\work\\mcdr-scheduled-restart\\.venv\\Scripts\\python.exe', 'fake_server.py']
+[MCDR] [15:26:00] [ScheduledRestart-Worker/INFO]: Server is running at PID 32396
+[MCDR] [15:26:00] [ScheduledRestart-Worker/INFO] [scheduled_restart]: [scheduled_restart] ����ָ�����·����˵���-ÿ20�룩
+[MCDR] [15:26:00] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] ��һ��������˵���-ÿ20�� �� 2026-09-30 15:26:20��cron: */20 * * * * *����ʽ: mcdr_restart������ 5 ����
+[Server] [15:26:00] [Server thread/INFO]: Done (0.512s)! For help, type "help"
+[MCDR] [15:26:05] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 15 �룬��ʽ chat���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:26:08] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 12 �룬��ʽ actionbar���ƻ� �˵���-ÿ20�룩
+[MCDR] [15:26:12] [ScheduledRestart/INFO] [scheduled_restart]: [scheduled_restart] �ѷ������ѣ���ǰ 8 �룬��ʽ title���ƻ� �˵���-ÿ20�룩

@@ -1,0 +1,60 @@
+﻿[MCDR] [2026-09-30 16:33:13.553] [TaskExecutor/WARNING] [metadata.py:236(create)]: Plugin ID of SoloPlugin(state=<PluginState.LOADING: 2>, path=WindowsPath('plugins/e2e_driver.py')) not found, use fallback id e2e_driver instead
+[MCDR] [2026-09-30 16:33:13.553] [TaskExecutor/WARNING] [metadata.py:358(create)]: SoloPlugin(state=<PluginState.LOADING: 2>, path=WindowsPath('plugins/e2e_driver.py')) doesn't specific a version, use fallback version 0.0.0
+[MCDR] [2026-09-30 16:33:13.584] [TaskExecutor/INFO] [plugin_manager.py:216(__load_plugin)]: Plugin e2e_driver@0.0.0 loaded
+[MCDR] [2026-09-30 16:33:18.110] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 已创建计划 #3 凌晨测试（每天 07:00，cron: 0 7 * * *）；默认已启用，并使用顶层 default_notifications 提醒组；配置已生效：共 3 个计划，其中 2 个已启用：BOM保留测试（每天 09:00）、凌晨测试（每天 07:00）；0 条警告，0 条错误
+[MCDR] [2026-09-30 16:33:20.114] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 已创建计划 #4 名字重复（每天 08:00，cron: 0 8 * * *）；默认已启用，并使用顶层 default_notifications 提醒组；配置已生效：共 4 个计划，其中 3 个已启用：BOM保留测试（每天 09:00）、凌晨测试（每天 07:00）、名字重复（每天 08:00）；0 条警告，0 条错误
+[MCDR] [2026-09-30 16:33:22.116] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 已经存在名为 '名字重复' 的计划，请换一个名字
+[MCDR] [2026-09-30 16:33:24.119] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] cron 表达式有误：分 字段的值 99 超出范围，可用值为 [0, 59]
+[MCDR] [2026-09-30 16:33:26.123] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 已禁用计划 #1 BOM保留测试（已写入配置文件，立即生效）；配置已生效：共 4 个计划，其中 2 个已启用：凌晨测试（每天 07:00）、名字重复（每天 08:00）；0 条警告，0 条错误
+[MCDR] [2026-09-30 16:33:28.126] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 配置已生效：共 4 个计划，其中 2 个已启用：凌晨测试（每天 07:00）、名字重复（每天 08:00）；0 条警告，0 条错误
+[MCDR] [2026-09-30 16:33:30.127] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: ===== 定时重启计划（4 个，总开关 开启）=====
+[MCDR] [2026-09-30 16:33:30.128] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#1] BOM保留测试 已禁用
+[MCDR] [2026-09-30 16:33:30.128] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 9 * * *（每天 09:00）
+[MCDR] [2026-09-30 16:33:30.128] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: —（剩余 —）
+[MCDR] [2026-09-30 16:33:30.128] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:30.128] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#2] 计划里就是关闭的 已禁用
+[MCDR] [2026-09-30 16:33:30.128] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 10 * * *（每天 10:00）
+[MCDR] [2026-09-30 16:33:30.128] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: —（剩余 —）
+[MCDR] [2026-09-30 16:33:30.129] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:30.129] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#3] 凌晨测试 已启用
+[MCDR] [2026-09-30 16:33:30.129] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 7 * * *（每天 07:00）
+[MCDR] [2026-09-30 16:33:30.129] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: 2026-10-01 07:00:00（剩余 14小时26分30秒）
+[MCDR] [2026-09-30 16:33:30.129] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:30.130] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#4] 名字重复 已启用
+[MCDR] [2026-09-30 16:33:30.130] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 8 * * *（每天 08:00）
+[MCDR] [2026-09-30 16:33:30.130] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: 2026-10-01 08:00:00（剩余 15小时26分30秒）
+[MCDR] [2026-09-30 16:33:30.130] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:32.133] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 已启用计划 #2 计划里就是关闭的（已写入配置文件，立即生效）；配置已生效：共 4 个计划，其中 3 个已启用：计划里就是关闭的（每天 10:00）、凌晨测试（每天 07:00）、名字重复（每天 08:00）；0 条警告，0 条错误
+[MCDR] [2026-09-30 16:33:34.135] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: ===== 定时重启计划（4 个，总开关 开启）=====
+[MCDR] [2026-09-30 16:33:34.135] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#1] BOM保留测试 已禁用
+[MCDR] [2026-09-30 16:33:34.135] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 9 * * *（每天 09:00）
+[MCDR] [2026-09-30 16:33:34.135] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: —（剩余 —）
+[MCDR] [2026-09-30 16:33:34.135] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:34.135] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#2] 计划里就是关闭的 已启用
+[MCDR] [2026-09-30 16:33:34.136] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 10 * * *（每天 10:00）
+[MCDR] [2026-09-30 16:33:34.136] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: 2026-10-01 10:00:00（剩余 17小时26分26秒）
+[MCDR] [2026-09-30 16:33:34.136] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:34.136] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#3] 凌晨测试 已启用
+[MCDR] [2026-09-30 16:33:34.136] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 7 * * *（每天 07:00）
+[MCDR] [2026-09-30 16:33:34.136] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: 2026-10-01 07:00:00（剩余 14小时26分26秒）
+[MCDR] [2026-09-30 16:33:34.136] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:34.136] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#4] 名字重复 已启用
+[MCDR] [2026-09-30 16:33:34.136] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 8 * * *（每天 08:00）
+[MCDR] [2026-09-30 16:33:34.137] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: 2026-10-01 08:00:00（剩余 15小时26分26秒）
+[MCDR] [2026-09-30 16:33:34.137] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:36.139] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 正在按提前量依次发送 1 条测试提醒…
+[MCDR] [2026-09-30 16:33:36.140] [ScheduledRestart-Test/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 已发送 1 条测试提醒（不会真正重启）
+[MCDR] [2026-09-30 16:33:38.142] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [定时重启] 已删除计划 计划里就是关闭的（原 cron: 0 10 * * *）；如需恢复请重新 add 或手动编辑配置文件；配置已生效：共 3 个计划，其中 2 个已启用：凌晨测试（每天 07:00）、名字重复（每天 08:00）；0 条警告，0 条错误
+[MCDR] [2026-09-30 16:33:40.143] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: ===== 定时重启计划（3 个，总开关 开启）=====
+[MCDR] [2026-09-30 16:33:40.144] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#1] BOM保留测试 已禁用
+[MCDR] [2026-09-30 16:33:40.144] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 9 * * *（每天 09:00）
+[MCDR] [2026-09-30 16:33:40.144] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: —（剩余 —）
+[MCDR] [2026-09-30 16:33:40.144] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:40.144] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#2] 凌晨测试 已启用
+[MCDR] [2026-09-30 16:33:40.144] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 7 * * *（每天 07:00）
+[MCDR] [2026-09-30 16:33:40.144] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: 2026-10-01 07:00:00（剩余 14小时26分20秒）
+[MCDR] [2026-09-30 16:33:40.145] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条
+[MCDR] [2026-09-30 16:33:40.145] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]: [#3] 名字重复 已启用
+[MCDR] [2026-09-30 16:33:40.145] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     cron: 0 8 * * *（每天 08:00）
+[MCDR] [2026-09-30 16:33:40.145] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     下次: 2026-10-01 08:00:00（剩余 15小时26分20秒）
+[MCDR] [2026-09-30 16:33:40.145] [e2e-driver/INFO] [misc_utils.py:19(print_text_to_console)]:     方式: mcdr_restart，提醒 1 条

@@ -1,0 +1,26 @@
+[project]
+name = "mcdr-scheduled-restart"
+version = "1.1.0"
+description = "MCDReforged plugin: cron-style scheduled server restarts with multi-stage notifications"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "GPL-3.0-or-later"
+authors = [
+    { name = "fangzi2006", email = "1439885013@qq.com" },
+]
+keywords = ["mcdreforged", "mcdr", "minecraft", "plugin", "cron", "scheduled-restart"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Topic :: Games/Entertainment",
+]
+
+[project.urls]
+Source = "https://github.com/fangzi2006/mcdr-scheduled-restart"
+Releases = "https://github.com/fangzi2006/mcdr-scheduled-restart/releases"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# 不使用 pytest 的 tmp_path：需要临时目录的测试统一用 tests/fakes.py 里的
+# workspace_temp_dir()，避免依赖系统临时目录的权限
+addopts = "-ra -p no:cacheprovider"

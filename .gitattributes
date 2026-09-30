@@ -1,0 +1,9 @@
+# 源码与文本文件统一用 LF 存进仓库，避免 Windows 上出现整文件级别的换行差异
+* text=auto eol=lf
+
+# 二进制文件不做换行转换
+*.mcdr binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.jar binary

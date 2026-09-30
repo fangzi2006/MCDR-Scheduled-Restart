@@ -1,0 +1,173 @@
+{
+    "enabled": true,
+    "_readme": [
+        "本文件由 MCDR 插件 scheduled_restart 生成，修改后可用 !!srestart reload 热重载。",
+        "cron 使用 Linux cron 格式：5 个字段为「分 时 日 月 周」，6 个字段为「秒 分 时 日 月 周」。",
+        "  示例：0 4 * * *      每天 04:00",
+        "        30 3 * * 1     每周一 03:30",
+        "        0 5 1 * *      每月 1 日 05:00",
+        "        0 */6 * * *    每 6 小时",
+        "        @daily         每天 00:00（支持 @hourly/@daily/@weekly/@monthly/@yearly 宏）",
+        "提醒写在 notifications 数组里，每条是一个对象：",
+        "  advance_seconds 提前多少秒发送（也支持 \"advance\": \"5m\" 这种写法）",
+        "  type            chat（聊天框）/ title（大标题）/ actionbar / command（执行指令）",
+        "  message         聊天框文本；title/subtitle 用于大标题；command 用于 type=command",
+        "  times           大标题的淡入/停留/淡出时间（秒），如 {\"fade_in\": 1, \"stay\": 4, \"fade_out\": 1}",
+        "  color           可选的聊天框颜色（yellow、#FFAA00 等），也可直接在文本里写 §e 之类的旧版颜色代码",
+        "  sound           可选，例如 \"minecraft:block.note_block.pling\"",
+        "文本占位符：{remaining} {remaining_seconds} {remaining_minutes} {time} {date} {datetime} {schedule} {cron}",
+        "重启方式 restart_method：mcdr_restart（默认，MCDR 重启服务器）/ stop（只停服）/ stop_exit（停服并退出 MCDR）",
+        "                        / custom（执行 custom_command）/ none（只发提醒不重启）",
+        "计划也可以用指令管理（会自动写回本文件）：",
+        "  !!srestart list                          查看序号、cron、下次重启时间",
+        "  !!srestart add <计划名> <cron>            新建计划，如 !!srestart add 每日重启 0 4 * * *",
+        "  !!srestart enable|disable [<序号>|all]    打开/关闭计划",
+        "  !!srestart remove <序号>                  删除计划",
+        "  !!srestart test <序号>                    只发提醒不重启，用于预览"
+    ],
+    "timezone": null,
+    "check_interval_seconds": 1.0,
+    "skip_missed_notifications": true,
+    "notify_on_join": true,
+    "join_message": "§e[定时重启] §f服务器将在 §b{remaining} §f后重启（§b{time}§f）",
+    "log_history": true,
+    "history_size": 100,
+    "default_notifications": [
+        {
+            "enabled": true,
+            "advance_seconds": 300.0,
+            "type": "chat",
+            "message": "§e[定时重启] §f服务器将在 §b{remaining} §f后重启（§b{time}§f）",
+            "title": "",
+            "subtitle": "",
+            "times": {
+                "fade_in": 1.0,
+                "stay": 4.0,
+                "fade_out": 1.0
+            },
+            "color": null,
+            "sound": null,
+            "sound_source": "master",
+            "sound_volume": 1.0,
+            "sound_pitch": 1.0,
+            "command": ""
+        },
+        {
+            "enabled": true,
+            "advance_seconds": 60.0,
+            "type": "chat",
+            "message": "§e[定时重启] §f服务器将在 §b{remaining} §f后重启，请提前找安全的地方下线",
+            "title": "",
+            "subtitle": "",
+            "times": {
+                "fade_in": 1.0,
+                "stay": 4.0,
+                "fade_out": 1.0
+            },
+            "color": null,
+            "sound": null,
+            "sound_source": "master",
+            "sound_volume": 1.0,
+            "sound_pitch": 1.0,
+            "command": ""
+        },
+        {
+            "enabled": true,
+            "advance_seconds": 30.0,
+            "type": "title",
+            "message": "",
+            "title": "§e服务器重启倒计时",
+            "subtitle": "§f剩余 §b{remaining}",
+            "times": {
+                "fade_in": 0.5,
+                "stay": 3.0,
+                "fade_out": 0.5
+            },
+            "color": null,
+            "sound": null,
+            "sound_source": "master",
+            "sound_volume": 1.0,
+            "sound_pitch": 1.0,
+            "command": ""
+        },
+        {
+            "enabled": true,
+            "advance_seconds": 10.0,
+            "type": "title",
+            "message": "",
+            "title": "§c即将重启",
+            "subtitle": "§f剩余 §b{remaining}",
+            "times": {
+                "fade_in": 0.2,
+                "stay": 2.0,
+                "fade_out": 0.2
+            },
+            "color": null,
+            "sound": null,
+            "sound_source": "master",
+            "sound_volume": 1.0,
+            "sound_pitch": 1.0,
+            "command": ""
+        },
+        {
+            "enabled": true,
+            "advance_seconds": 0.0,
+            "type": "chat",
+            "message": "§c[定时重启] §f服务器正在重启，请稍后重新连接",
+            "title": "",
+            "subtitle": "",
+            "times": {
+                "fade_in": 1.0,
+                "stay": 4.0,
+                "fade_out": 1.0
+            },
+            "color": null,
+            "sound": null,
+            "sound_source": "master",
+            "sound_volume": 1.0,
+            "sound_pitch": 1.0,
+            "command": ""
+        }
+    ],
+    "schedules": [
+        {
+            "name": "示例-每天凌晨4点重启（默认关闭，改 enabled 为 true 即生效）",
+            "enabled": false,
+            "cron": "0 4 * * *",
+            "restart_method": "mcdr_restart",
+            "custom_command": "stop",
+            "custom_auto_start": false,
+            "restart_delay_seconds": 0.0,
+            "kick_players": false,
+            "kick_message": "服务器正在重启，请稍后重新连接",
+            "use_default_notifications": true,
+            "notifications": []
+        },
+        {
+            "name": "示例-每周一凌晨3点半重启（默认关闭）",
+            "enabled": false,
+            "cron": "30 3 * * 1",
+            "restart_method": "mcdr_restart",
+            "custom_command": "stop",
+            "custom_auto_start": false,
+            "restart_delay_seconds": 0.0,
+            "kick_players": false,
+            "kick_message": "服务器正在重启，请稍后重新连接",
+            "use_default_notifications": true,
+            "notifications": []
+        },
+        {
+            "name": "示例-每月1日凌晨5点重启（默认关闭）",
+            "enabled": false,
+            "cron": "0 5 1 * *",
+            "restart_method": "mcdr_restart",
+            "custom_command": "stop",
+            "custom_auto_start": false,
+            "restart_delay_seconds": 0.0,
+            "kick_players": false,
+            "kick_message": "服务器正在重启，请稍后重新连接",
+            "use_default_notifications": true,
+            "notifications": []
+        }
+    ]
+}

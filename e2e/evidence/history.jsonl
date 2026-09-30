@@ -1,0 +1,2 @@
+{"time": "2026-09-30T15:25:40", "schedule": "端到端-每20秒", "cron": "*/20 * * * * *", "method": "mcdr_restart", "manual": false, "actor": ""}
+{"time": "2026-09-30T15:26:00", "schedule": "端到端-每20秒", "cron": "*/20 * * * * *", "method": "mcdr_restart", "manual": false, "actor": ""}

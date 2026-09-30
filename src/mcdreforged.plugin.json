@@ -1,0 +1,24 @@
+{
+  "id": "scheduled_restart",
+  "version": "1.1.0",
+  "name": "Scheduled Restart",
+  "description": {
+    "en_us": "Cron-style scheduled server restarts with configurable multi-stage notifications (chat / title)",
+    "zh_cn": "按 Linux cron 表达式定时重启服务器，支持多条自定义提醒（聊天框 / 大标题）"
+  },
+  "authors": [
+    "fangzi2006"
+  ],
+  "license": "GPL-3.0-or-later",
+  "links": {
+    "homepage": "https://github.com/fangzi2006/mcdr-scheduled-restart",
+    "source": "https://github.com/fangzi2006/mcdr-scheduled-restart",
+    "issues": "https://github.com/fangzi2006/mcdr-scheduled-restart/issues",
+    "documentation": "https://github.com/fangzi2006/mcdr-scheduled-restart#readme"
+  },
+  "dependencies": {
+    "mcdreforged": ">=2.12.0"
+  },
+  "requirements_file": null,
+  "entrypoint": "scheduled_restart"
+}

@@ -1,0 +1,29 @@
+===== 端到端指令测试开始 =====
+初始配置: [('BOM保留测试', True), ('计划里就是关闭的', False)]
+>>> (1/13) ﻿!!srestart list
+    配置快照: [('BOM保留测试', True), ('计划里就是关闭的', False)]
+>>> (2/13) !!srestart add 凌晨测试 0 7 * * *
+    配置快照: [('BOM保留测试', True), ('计划里就是关闭的', False), ('凌晨测试', True)]
+>>> (3/13) !!srestart add 名字重复 0 8 * * *
+    配置快照: [('BOM保留测试', True), ('计划里就是关闭的', False), ('凌晨测试', True), ('名字重复', True)]
+>>> (4/13) !!srestart add 名字重复 0 9 * * *
+    配置快照: [('BOM保留测试', True), ('计划里就是关闭的', False), ('凌晨测试', True), ('名字重复', True)]
+>>> (5/13) !!srestart add 坏计划 99 * * * *
+    配置快照: [('BOM保留测试', True), ('计划里就是关闭的', False), ('凌晨测试', True), ('名字重复', True)]
+>>> (6/13) !!srestart disable 1
+    配置快照: [('BOM保留测试', False), ('计划里就是关闭的', False), ('凌晨测试', True), ('名字重复', True)]
+>>> (7/13) !!srestart reload
+    配置快照: [('BOM保留测试', False), ('计划里就是关闭的', False), ('凌晨测试', True), ('名字重复', True)]
+>>> (8/13) !!srestart list
+    配置快照: [('BOM保留测试', False), ('计划里就是关闭的', False), ('凌晨测试', True), ('名字重复', True)]
+>>> (9/13) !!srestart enable 2
+    配置快照: [('BOM保留测试', False), ('计划里就是关闭的', True), ('凌晨测试', True), ('名字重复', True)]
+>>> (10/13) !!srestart list
+    配置快照: [('BOM保留测试', False), ('计划里就是关闭的', True), ('凌晨测试', True), ('名字重复', True)]
+>>> (11/13) !!srestart test 2
+    配置快照: [('BOM保留测试', False), ('计划里就是关闭的', True), ('凌晨测试', True), ('名字重复', True)]
+>>> (12/13) !!srestart remove 2
+    配置快照: [('BOM保留测试', False), ('凌晨测试', True), ('名字重复', True)]
+>>> (13/13) !!srestart list
+    配置快照: [('BOM保留测试', False), ('凌晨测试', True), ('名字重复', True)]
+===== 端到端指令测试结束 =====

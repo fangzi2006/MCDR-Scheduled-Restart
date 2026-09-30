@@ -1,0 +1,22 @@
+2026-09-30T15:25:32 | title @a times 10 40 10
+2026-09-30T15:25:32 | title @a subtitle ["", {"text": "剩余 ", "color": "white"}, {"text": "8秒", "color": "aqua"}]
+2026-09-30T15:25:32 | title @a title {"text": "重启倒计时", "color": "yellow"}
+2026-09-30T15:25:32 | playsound minecraft:block.note_block.pling master @a 1 1
+2026-09-30T15:25:36 | say E2E-COMMAND-TEST 4
+2026-09-30T15:25:40 | execute at @p run tellraw @a {"text":"[E2E] 服务器正在重启","color":"red"}
+2026-09-30T15:25:40 | stop
+2026-09-30T15:25:45 | execute at @p run tellraw @a {"text":"[E2E] 还有 15秒 重启，15:26:00","color":"yellow"}
+2026-09-30T15:25:48 | title @a actionbar {"text": "E2E actionbar 12秒", "color": "aqua"}
+2026-09-30T15:25:52 | title @a times 10 40 10
+2026-09-30T15:25:52 | title @a subtitle ["", {"text": "剩余 ", "color": "white"}, {"text": "8秒", "color": "aqua"}]
+2026-09-30T15:25:52 | title @a title {"text": "重启倒计时", "color": "yellow"}
+2026-09-30T15:25:52 | playsound minecraft:block.note_block.pling master @a 1 1
+2026-09-30T15:25:56 | say E2E-COMMAND-TEST 4
+2026-09-30T15:26:00 | execute at @p run tellraw @a {"text":"[E2E] 服务器正在重启","color":"red"}
+2026-09-30T15:26:00 | stop
+2026-09-30T15:26:05 | execute at @p run tellraw @a {"text":"[E2E] 还有 15秒 重启，15:26:20","color":"yellow"}
+2026-09-30T15:26:08 | title @a actionbar {"text": "E2E actionbar 12秒", "color": "aqua"}
+2026-09-30T15:26:12 | title @a times 10 40 10
+2026-09-30T15:26:12 | title @a subtitle ["", {"text": "剩余 ", "color": "white"}, {"text": "8秒", "color": "aqua"}]
+2026-09-30T15:26:12 | title @a title {"text": "重启倒计时", "color": "yellow"}
+2026-09-30T15:26:12 | playsound minecraft:block.note_block.pling master @a 1 1
