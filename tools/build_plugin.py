@@ -2,16 +2,25 @@
 
 用法::
 
-    python tools/build_plugin.py                 # 输出到 dist/scheduled_restart-v1.0.0.mcdr
-    python tools/build_plugin.py -o out/x.mcdr   # 指定输出路径
+    python tools/build_plugin.py                  # 输出到 dist/<插件 id>-v<版本>.mcdr
+    python tools/build_plugin.py -o out/x.mcdr    # 指定输出路径
+    python tools/build_plugin.py -s 别的/src -o out.mcdr
 
-也可以直接作为目录插件使用：把 ``src/`` 里的内容整体放进 MCDR 的 ``plugins/``
-下的一个文件夹里（例如 ``plugins/scheduled_restart/``）。
+包内结构（MCDR 打包插件的要求：根目录只能有 ``mcdreforged.plugin.json``
+以及与插件 id 同名的那个包）::
+
+    mcdreforged.plugin.json
+    scheduled_restart/__init__.py
+    scheduled_restart/...
+
+也可以直接作为目录插件使用：把 ``src/`` **里面**的内容整体放进 MCDR 的
+``plugins/scheduled_restart/``（注意不是把 ``src`` 目录本身放进去）。
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import zipfile
 from pathlib import Path
@@ -34,6 +43,14 @@ def default_output(src: Path = SRC, dist: Path = DIST) -> Path:
     return Path(dist) / f"{metadata['id']}-v{metadata['version']}.mcdr"
 
 
+def calc_file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, 'rb') as file_handler:
+        for chunk in iter(lambda: file_handler.read(1 << 16), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def build(src: Path = SRC, out: Path = None) -> Path:
     """打包并返回生成的 ``.mcdr`` 路径"""
     src = Path(src)
@@ -46,6 +63,8 @@ def build(src: Path = SRC, out: Path = None) -> Path:
         for path in sorted(src.rglob('*')):
             if not path.is_file():
                 continue
+            if path.resolve() == out.resolve():
+                continue        # 输出文件恰好落在源码目录里时不要把它自己打进去
             relative = path.relative_to(src)
             if any(part in EXCLUDE_DIRS for part in relative.parts):
                 continue
@@ -64,6 +83,7 @@ def main() -> None:
     output = build(args.src, args.output)
     size = output.stat().st_size
     print(f'已生成插件包: {output}（{size} 字节）')
+    print(f'sha256: {calc_file_sha256(output)}')
 
 
 if __name__ == '__main__':

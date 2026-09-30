@@ -352,7 +352,128 @@ uv pip install --python .venv/Scripts/python.exe mcdreforged pytest     # Window
 并用 MCDR 的元数据校验器、`zipimport` 验证 `.mcdr` 包的合法性；
 调度部分的时间全部来自可注入的时钟，测试是确定性的（不依赖真实等待）。
 
-### 真实 MCDR 端到端验证
+---
+
+## 打包与发布
+
+### 先决条件
+
+* **Python >= 3.8**（打包脚本只用标准库的 `zipfile`，不需要装 MCDR、也不需要装任何第三方库）
+* 确认 `src/mcdreforged.plugin.json` 里的 `version` 是你想发布的版本号——
+  它会**同时决定包内版本和输出文件名** `dist/<插件 id>-v<版本>.mcdr`
+
+### 一条命令打包
+
+```bash
+python tools/build_plugin.py
+# 已生成插件包: dist/scheduled_restart-v1.1.0.mcdr（34257 字节）
+# sha256: 7b87e6373c52de2b357a1c326c94e99052d653acbebfcdc964135f3b2c9c441e
+```
+
+> 上面是本次构建的真实输出。注意 sha256 每次重新打包都会变（zip 里记录了文件的修改时间），
+> 所以它适合用来「校验某次发布下载到的文件有没有损坏/被替换」，不适合写死在文档里当常量。
+> 发布时把这条 sha256 一起贴到 Release 说明里，使用者就能核对下载的附件。
+
+脚本按**自身所在位置**定位工程，所以在任意工作目录下都能执行。
+可用参数：
+
+```bash
+python tools/build_plugin.py -o build/my_plugin.mcdr      # 指定输出路径
+python tools/build_plugin.py -s other/src -o build/x.mcdr # 指定源码目录 + 输出
+```
+
+打包逻辑（也是 `tests/test_package.py` 里在验证的规则）：
+
+| 行为 | 说明 |
+| --- | --- |
+| 打包起点 | `src/` **里面**的内容（不是把 `src` 这个目录本身打进去） |
+| 必含文件 | `mcdreforged.plugin.json`（必须在包根）、`scheduled_restart/` 整个包 |
+| 自动跳过 | `__pycache__/`、`.mypy_cache/`、`.pytest_cache/`、`*.pyc`、`*.pyo` |
+| 压缩方式 | `ZIP_DEFLATED`，已存在的同名输出会先删除再重建 |
+| 输出位置 | 默认 `dist/`（该目录已被 `.gitignore` 忽略，不进仓库） |
+
+> **为什么必须从 `src/` 里面开始打包？**
+> MCDR 对打包插件有一条硬性校验：包根目录只允许出现 `mcdreforged.plugin.json`
+> 和**与插件 id 同名的那个包**（这里是 `scheduled_restart/`）。
+> 如果打成 `src/scheduled_restart/...` 这种多了一层 `src/` 的结构，MCDR 会直接报
+> `IllegalPluginStructure` 拒绝加载。
+
+### 不用脚本，手工打包
+
+`.mcdr` 就是一个普通 zip，手工打包也可以，只要结构对。**注意手工打包不会自动跳过
+`__pycache__`，打包前先删掉它**，否则会把这些缓存文件一起塞进包里：
+
+```bash
+# Linux / macOS
+cd src                                   # 关键：进到 src 里面
+find . -name '__pycache__' -type d -exec rm -rf {} +
+zip -r ../dist/scheduled_restart.mcdr . -x '*/__pycache__/*' '*.pyc'
+```
+
+```powershell
+# Windows（Compress-Archive 不支持排除规则，所以先删掉缓存目录）
+cd src
+Get-ChildItem -Recurse -Directory -Filter '__pycache__' | Remove-Item -Recurse -Force
+Compress-Archive -Path * -DestinationPath ..\dist\scheduled_restart.mcdr -Force
+```
+
+打包后确认结构正确：
+
+```bash
+python -m zipfile -l dist/scheduled_restart-v1.1.0.mcdr
+# 应当只看到：mcdreforged.plugin.json、scheduled_restart/__init__.py、scheduled_restart/*.py
+```
+
+也可以把扩展名改成 `.zip` 直接用解压软件查看。
+
+### 校验插件包
+
+```bash
+sha256sum dist/scheduled_restart-v1.1.0.mcdr                          # Linux / macOS
+Get-FileHash dist\scheduled_restart-v1.1.0.mcdr -Algorithm SHA256     # Windows PowerShell
+```
+
+把这个值与 Release 说明里公布的 sha256 比对，就能确认下载到的附件没有被改过或损坏。
+
+### 打包后自检
+
+1. **跑测试**：`test_package.py` 会自动用 `tools/build_plugin.py` 打一次包，校验布局合法性，
+   并把 `.mcdr` 加进 `sys.path` **真正 import 一次**，确认打包后的导入路径没问题：
+
+   ```bash
+   python -m pytest tests/test_package.py -q
+   ```
+
+2. **装进 MCDR 看日志**：把 `.mcdr` 放进 `plugins/`，启动后应当看到
+
+   ```
+   [MCDR] [TaskExecutor/INFO]: Plugin scheduled_restart@1.1.0 loaded
+   ```
+
+   并在控制台看到 `[scheduled_restart] v1.1.0 已加载：…`；用 `!!MCDR plugin list` 也能看到它。
+
+3. **不想打包**也可以直接用「目录插件」模式调试：把 `src/` 里的内容复制到
+   `plugins/scheduled_restart/`，改完代码执行 `!!MCDR plugin reload scheduled_restart` 即可，
+   比每次重新打包快得多。
+
+### 发布到 GitHub Release
+
+```bash
+git tag -a v1.1.0 -m "v1.1.0"
+git push origin main --follow-tags
+
+# 附带插件包发布（装了 GitHub CLI 的话）
+gh release create v1.1.0 dist/scheduled_restart-v1.1.0.mcdr \
+  --title "v1.1.0" --notes-file CHANGELOG.md      # 或 --generate-notes 让 GitHub 自动生成
+```
+
+没有 `gh` 就在网页上操作：**Releases → Draft a new release** → 选 tag `v1.1.0`
+→ 说明可直接复制 [CHANGELOG.md](CHANGELOG.md) 里对应版本的段落 → 上传 `dist\scheduled_restart-v1.1.0.mcdr` → Publish。
+
+> 仓库里**不放**构建产物（`dist/` 已被忽略），插件包一律通过 Release 附件分发：
+> 这样每次改代码不会给仓库历史塞进二进制文件，而使用者仍能在 Release 页面直接下载。
+
+## 真实 MCDR 端到端验证
 
 除单元测试外，还用**真实的 MCDReforged 2.16.0 进程**跑了三类场景（工装、原始证据与复现步骤见
 [`e2e/`](e2e/README.md)）。场景 ① 是定时重启全链路（`cron: */20 * * * * *`，两轮重启）：
@@ -435,6 +556,9 @@ restarts your Minecraft server on a **Linux cron schedule** and warns players be
   `!!srestart remove|enable|disable|test <#index>`, `!!srestart reload|cancel`.
   To restart the server *right now*, use MCDR's own `!!MCDR server restart`.
 * No third-party Python dependencies; the cron parser is built in.
+* Build the distributable package with `python tools/build_plugin.py` (a `.mcdr` file is just a zip
+  whose root holds `mcdreforged.plugin.json` + the `scheduled_restart/` package; see
+  [打包与发布](#打包与发布)). Build artifacts are attached to GitHub Releases, not committed.
 * Tested with unit tests (216) plus a real MCDReforged end-to-end run — see [`e2e/`](e2e/README.md).
 * Requires MCDReforged >= 2.12.0 and Python >= 3.8.
 
