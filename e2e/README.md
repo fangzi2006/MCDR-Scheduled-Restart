@@ -91,6 +91,10 @@ MCDR 2.16.0 + Python 3.13.7，计划 `cron: */20 * * * * *`（每 20 秒），�
 | 15:25:45 → 15:25:56 | 第二轮提醒严格按 15/12/8/4 秒提前量发出 | [`evidence/commands.log`](evidence/commands.log) |
 | 15:26:00 | 第二轮重启完成，计划顺延到 `15:26:20` | [`evidence/history.jsonl`](evidence/history.jsonl) |
 
+> 注：表中那条 `playsound … master @a 1 1` 是当时的真实输出，但它**少了坐标**，
+> 在真实服务端会因参数错位而报错——这正是 v1.1.1 修掉的问题（见文末「已知盲区」与 [CHANGELOG](../CHANGELOG.md)）。
+> v1.1.1 之后默认生成的是 `execute as @a at @s run playsound … master @s ~ ~ ~ <音量> <音调>`。
+
 ## 场景 B 实测结果
 
 在真实 MCDR 里依次执行 13 条指令（配置初始为 1 个启用计划），
