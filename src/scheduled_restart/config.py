@@ -8,8 +8,8 @@
           "name": "每日凌晨重启",
           "cron": "0 4 * * *",
           "notifications": [
-            {"advance_seconds": 300, "type": "chat",  "message": "§e5 分钟后重启"},
-            {"advance_seconds": 60,  "type": "title", "title": "重启倒计时", "subtitle": "剩余 {remaining}"}
+            {"advance_time": 300, "type": "chat",  "message": "§e5 分钟后重启"},
+            {"advance_time": 60,  "type": "title", "title": "重启倒计时", "subtitle": "剩余 {remaining}"}
           ]
         }
       ]
@@ -188,12 +188,13 @@ def _read_dict(raw: Dict[str, Any], key: str, default: Dict[str, Any], path: str
 class Notification:
     """一条提醒
 
-    :param advance_seconds: 提前多少秒发送（相对真正重启的时刻）
+    :param advance_time: 提前多久发送（相对真正重启的时刻）。可以是纯数字秒数，
+        也可以是 ``5m`` / ``1h30m`` / ``1天2小时`` 这类时长文本。
     :param type: 通知方式，``chat``(聊天框) / ``title``(大标题) / ``actionbar`` / ``command``
     """
 
     enabled: bool = True
-    advance_seconds: float = 60.0
+    advance_time: float = 60.0
     type: str = 'chat'
     message: str = ''
     title: str = ''
@@ -222,7 +223,7 @@ class Notification:
     def to_raw(self) -> Dict[str, Any]:
         return {
             'enabled': self.enabled,
-            'advance_seconds': round(self.advance_seconds, 3),
+            'advance_time': round(self.advance_time, 3),
             'type': self.type,
             'message': self.message,
             'title': self.title,
@@ -251,20 +252,15 @@ def _parse_notification(raw: Any, path: str, issues: _Issues) -> Optional[Notifi
     notification = Notification()
     notification.enabled = _read_bool(raw, 'enabled', True, path, issues)
 
-    if 'advance_seconds' in raw:
-        advance_value = raw['advance_seconds']
-    elif 'advance' in raw:
-        advance_value = raw['advance']
-    else:
-        advance_value = None
+    advance_value = raw.get('advance_time')
     if advance_value is None:
-        notification.advance_seconds = 60.0
+        notification.advance_time = 60.0
     else:
         try:
-            notification.advance_seconds = parse_duration(advance_value, field_name=f'{path}.advance_seconds')
+            notification.advance_time = parse_duration(advance_value, field_name=f'{path}.advance_time')
         except CronError as e:
-            issues.warn(f'{path}.advance_seconds', f'{e}，已回退默认值 60')
-            notification.advance_seconds = 60.0
+            issues.warn(f'{path}.advance_time', f'{e}，已回退默认值 60')
+            notification.advance_time = 60.0
 
     notification.type = _read_str(raw, 'type', 'chat', path, issues).strip().lower()
     if notification.type not in NOTIFICATION_TYPES:
@@ -468,6 +464,7 @@ class Config:
     join_message: str = '§e[定时重启] §f服务器将在 §b{remaining} §f后重启（§b{time}§f）'
     log_history: bool = True
     history_size: int = 100
+    command_alias: Optional[str] = None
     default_notifications: List[Notification] = field(default_factory=list)
     schedules: List[Schedule] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
@@ -499,6 +496,7 @@ class Config:
             'join_message': self.join_message,
             'log_history': self.log_history,
             'history_size': self.history_size,
+            'command_alias': self.command_alias or '',
             'default_notifications': [item.to_raw() for item in self.default_notifications],
             'schedules': [item.to_raw() for item in self.schedules],
         }
@@ -538,6 +536,31 @@ class Config:
         config.log_history = _read_bool(raw, 'log_history', True, 'config', issues)
         config.history_size = _read_int(raw, 'history_size', 100, 'config', issues, minimum=1, maximum=100000)
 
+        alias = _read_optional_str(raw, 'command_alias', None, 'config', issues)
+        if alias is not None:
+            alias = alias.strip()
+            if alias == '':
+                alias = None
+            elif not alias.startswith('!!'):
+                issues.warn(
+                    'config.command_alias',
+                    f'自定义指令别名必须以 !! 开头，实际为 {alias!r}，已忽略'
+                )
+                alias = None
+            elif alias == '!!srestart':
+                issues.warn(
+                    'config.command_alias',
+                    '自定义指令别名不能与默认指令 !!srestart 重复，已忽略'
+                )
+                alias = None
+            elif ' ' in alias:
+                issues.warn(
+                    'config.command_alias',
+                    f'自定义指令别名不能包含空格，实际为 {alias!r}，已忽略'
+                )
+                alias = None
+        config.command_alias = alias
+
         config.default_notifications = _parse_notification_list(
             _read_list(raw, 'default_notifications', [], 'config', issues), 'default_notifications', issues
         )
@@ -573,7 +596,7 @@ DEFAULT_README = [
     '        0 */6 * * *    每 6 小时',
     '        @daily         每天 00:00（支持 @hourly/@daily/@weekly/@monthly/@yearly 宏）',
     '提醒写在 notifications 数组里，每条是一个对象：',
-    '  advance_seconds 提前多少秒发送（也可以写 advance 字段，值用 5m / 1h30m / 1天2小时 这类时长文本）',
+    '  advance_time 提前多久发送；可以写纯数字秒数，也可以写 5m / 1h30m / 1天2小时 这类时长文本',
     '  type            chat 聊天框 / title 大标题 / actionbar 物品栏上方 / command 执行指令',
     '  message         聊天框文本；title 与 subtitle 用于大标题；command 用于 type 为 command 时',
     '  times           大标题的淡入、停留、淡出时间（秒），三个数字分别写在 fade_in / stay / fade_out 里',
@@ -586,6 +609,9 @@ DEFAULT_README = [
     '文本占位符：{remaining} {remaining_seconds} {remaining_minutes} {time} {date} {datetime} {schedule} {cron}',
     '重启方式 restart_method：mcdr_restart（默认，MCDR 重启服务器）/ stop（只停服）/ stop_exit（停服并退出 MCDR）',
     '                        / custom（执行 custom_command）/ none（只发提醒不重启）',
+    '指令权限：list / next 所有玩家可用；status / history 需要 helper；其余变更指令需要 MCDR admin。',
+    '  Minecraft 的 /op 不等于 MCDR admin，需要服主在控制台执行 !!MCDR permission set <玩家名> admin。',
+    '自定义简化指令：在 command_alias 里写 !!sr，则 !!sr 与 !!srestart 等价。',
     '计划也可以用指令管理（会自动写回本文件）：',
     '  !!srestart list                          查看序号、cron、下次重启时间',
     '  !!srestart add <计划名> <cron>            新建计划，如 !!srestart add 每日重启 0 4 * * *',
@@ -598,7 +624,7 @@ DEFAULT_README = [
 def _default_notification(**kwargs) -> Dict[str, Any]:
     base: Dict[str, Any] = {
         'enabled': True,
-        'advance_seconds': 60,
+        'advance_time': 60,
         'type': 'chat',
         'message': '',
         'title': '',
@@ -618,7 +644,7 @@ def _default_notification(**kwargs) -> Dict[str, Any]:
 
 DEFAULT_NOTIFICATIONS: List[Dict[str, Any]] = [
     _default_notification(
-        advance_seconds=300,
+        advance_time=300,
         type='chat',
         message='§e[定时重启] §f服务器将在 §b{remaining} §f后重启（§b{time}§f）',
     ),
@@ -654,6 +680,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     'join_message': '§e[定时重启] §f服务器将在 §b{remaining} §f后重启（§b{time}§f）',
     'log_history': True,
     'history_size': 100,
+    'command_alias': '',
     'default_notifications': DEFAULT_NOTIFICATIONS,
     'schedules': [
         default_schedule_entry(
@@ -663,6 +690,82 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         ),
     ],
 }
+
+#: 已废弃的顶层配置键，加载时会自动移除
+DEPRECATED_CONFIG_KEYS: FrozenSet[str] = frozenset()
+
+
+def _deep_merge_defaults(default: Any, current: Any) -> Tuple[Any, bool]:
+    """把 ``default`` 的缺失键递归合并进 ``current``。
+
+    :return: (合并后的值, 是否发生修改)
+    """
+    if isinstance(default, dict) and isinstance(current, dict):
+        merged = dict(current)
+        modified = False
+        for key, default_value in default.items():
+            if key not in merged:
+                merged[key] = copy.deepcopy(default_value)
+                modified = True
+            else:
+                merged_value, sub_modified = _deep_merge_defaults(default_value, merged[key])
+                if sub_modified:
+                    merged[key] = merged_value
+                    modified = True
+        return merged, modified
+    # 列表/标量保持用户原值，避免覆盖用户自定义的提醒或计划
+    return current, False
+
+
+def upgrade_config(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
+    """把旧版本配置文件升级到当前默认结构。
+
+    行为：
+
+    * 递归补齐缺失的顶层 / 嵌套字段（保留用户已有值）
+    * ``_readme`` 总是更新为插件自带的最新说明
+    * ``schedules`` 数组里的每个计划对象用 :func:`default_schedule_entry` 补齐字段
+    * 移除 :data:`DEPRECATED_CONFIG_KEYS` 中标记的废弃键
+
+    :return: (升级后的配置, 是否发生修改)
+    """
+    if not isinstance(raw, dict):
+        return copy.deepcopy(DEFAULT_CONFIG), True
+
+    default = copy.deepcopy(DEFAULT_CONFIG)
+    upgraded, modified = _deep_merge_defaults(default, raw)
+
+    # _readme 随插件版本更新
+    if upgraded.get('_readme') != default['_readme']:
+        upgraded['_readme'] = copy.deepcopy(default['_readme'])
+        modified = True
+
+    # schedules 中每个计划对象都要是插件认得的合法结构
+    default_schedule = default_schedule_entry()
+    schedules = upgraded.get('schedules')
+    if isinstance(schedules, list):
+        new_schedules: List[Any] = []
+        schedules_modified = False
+        for entry in schedules:
+            if isinstance(entry, dict):
+                merged_entry, entry_modified = _deep_merge_defaults(default_schedule, entry)
+                new_schedules.append(merged_entry)
+                if entry_modified:
+                    schedules_modified = True
+            else:
+                # 非对象条目保留原样，让 Config.from_raw 报错误并跳过
+                new_schedules.append(entry)
+        if schedules_modified:
+            upgraded['schedules'] = new_schedules
+            modified = True
+
+    # 清理废弃键
+    for key in DEPRECATED_CONFIG_KEYS:
+        if key in upgraded:
+            del upgraded[key]
+            modified = True
+
+    return upgraded, modified
 
 
 def config_file_path(server) -> str:
@@ -725,8 +828,10 @@ def preprocess_config_file(server) -> None:
 def load_config(server) -> Config:
     """从 MCDR 数据目录读取配置文件并规范化
 
-    缺失的顶层键由 MCDR 自动补齐；嵌套的默认值由本函数补齐，
-    并把自动修正过的问题写进返回值，由调用方打印日志。
+    缺失的顶层键由 MCDR 自动补齐；嵌套的默认值由 :func:`upgrade_config` 补齐。
+    插件更新导致配置结构变化时，会自动把新增字段写进配置文件，
+    并移除 :data:`DEPRECATED_CONFIG_KEYS` 中标记的废弃键。
+    若配置文件本身存在错误（如 cron 写错），则不会回写，避免覆盖用户写错的内容。
     """
     preprocess_config_file(server)
     raw = server.load_config_simple(
@@ -734,8 +839,9 @@ def load_config(server) -> Config:
         default_config=copy.deepcopy(DEFAULT_CONFIG),
         echo_in_console=True,
     )
+    raw, upgraded = upgrade_config(raw)
     config = Config.from_raw(raw)
-    if config.needs_save:
+    if not config.errors and (upgraded or config.needs_save):
         try:
             server.save_config_simple(config.to_raw(), file_name='config.json')
         except Exception as e:  # pragma: no cover - 保存失败不影响运行

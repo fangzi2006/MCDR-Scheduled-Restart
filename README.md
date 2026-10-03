@@ -31,7 +31,7 @@
 ```bash
 git clone https://github.com/fangzi2006/mcdr-scheduled-restart.git
 cd mcdr-scheduled-restart
-python tools/build_plugin.py          # 生成 dist/scheduled_restart-v1.1.1.mcdr
+python tools/build_plugin.py          # 生成 dist/scheduled_restart-v1.2.1.mcdr
 ```
 
 **方式三：目录插件**
@@ -71,31 +71,6 @@ plugins/scheduled_restart/scheduled_restart/__init__.py
 
 ---
 
-## 目录结构
-
-```
-mcdr-scheduled-restart/
-├── src/                            # 插件本体（打包成 .mcdr 或直接放进 plugins/）
-│   ├── mcdreforged.plugin.json     # 插件元数据
-│   └── scheduled_restart/
-│       ├── __init__.py             # MCDR 入口（on_load / on_unload / on_player_joined）
-│       ├── cron.py                 # cron 解析、下次触发时间、中文描述
-│       ├── config.py               # 配置默认值、校验、容错、读取前处理（去 BOM / 坏文件备份）
-│       ├── config_store.py         # 配置文件读改写（enable / disable / add / remove 指令用）
-│       ├── notify.py               # 提醒渲染与发送（聊天框 / 大标题 / 音效）
-│       ├── scheduler.py            # 调度线程、倒计时状态机、重启执行、历史记录
-│       └── command.py              # !!srestart 指令树
-├── examples/config.json            # 生成出来的默认配置（与实际运行完全一致）
-├── tests/                          # 216 个单元测试
-├── e2e/                            # 真实 MCDR 端到端测试（模拟服务端、测试驱动插件、实测证据）
-├── tools/build_plugin.py           # 打包 .mcdr
-├── tools/generate_example_config.py
-├── CHANGELOG.md                    # 更新日志
-└── LICENSE                         # GPL-3.0
-```
-
----
-
 ## 配置文件详解
 
 ### 顶层字段
@@ -110,6 +85,7 @@ mcdr-scheduled-restart/
 | `join_message` | string | 见示例 | 进服私聊内容，支持占位符 |
 | `log_history` | bool | `true` | 是否把每次重启写入 `config/scheduled_restart/history.jsonl` |
 | `history_size` | int | `100` | 历史文件过大时保留的最近条数 |
+| `command_alias` | string | `""` | 自定义简化指令前缀，如 `"!!sr"`；留空则只保留 `!!srestart` |
 | `default_notifications` | array | 1 条示例 | **默认提醒组**，计划里 `use_default_notifications: true` 时使用 |
 | `schedules` | array | 3 个示例 | 重启计划列表 |
 | `_readme` | array | — | 写在配置文件里的说明，仅供阅读，可随意修改（JSON 不支持注释，所以说明放在这个字段里；配置文件里的示例都已写成不需要转义的纯文本） |
@@ -138,12 +114,12 @@ mcdr-scheduled-restart/
 * `custom`：执行 `custom_command`，可选 `custom_auto_start`
 * `none`：只发提醒不重启（可用于「提前预告维护」）
 
-### `notifications[]`（提醒，数组里放对象）
+### `notifications[]`（提醒）
 
 | 字段 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `enabled` | bool | `true` | 是否启用这条提醒 |
-| `advance_seconds` | number \| string | `60` | 提前多少秒发送；支持 `"5m"`、`"1h30m"`、`"1天2小时"`，也可写成同义的 `advance` |
+| `advance_time` | number \| string | `60` | 提前多久发送；支持数字秒数，也支持 `"5m"`、`"1h30m"`、`"1天2小时"` 这类时长文本 |
 | `type` | string | `chat` | `chat`（聊天框）/ `title`（大标题）/ `actionbar` / `command` |
 | `message` | string | `""` | `chat` / `actionbar` 的文本 |
 | `title` | string | `""` | `title` 的主标题 |
@@ -156,7 +132,7 @@ mcdr-scheduled-restart/
 | `sound_volume` / `sound_pitch` | number | `1.0` | 音量 / 音调（`sound_position` 为空时这两项会被忽略） |
 | `command` | string | `""` | `type=command` 时下发的指令，支持占位符 |
 
-一个「多条提醒」的完整例子（也支持简写 `advance`）：
+一个「多条提醒」的完整例子：
 
 ```json
 {
@@ -166,13 +142,13 @@ mcdr-scheduled-restart/
   "restart_method": "mcdr_restart",
   "use_default_notifications": false,
   "notifications": [
-    { "advance": "30m", "type": "chat",  "message": "§e[维护] §f服务器将在 §b{remaining} §f后重启（§b{time}§f）" },
-    { "advance": "10m", "type": "title", "title": "§e重启倒计时", "subtitle": "§f剩余 §b{remaining}",
+    { "advance_time": "30m", "type": "chat",  "message": "§e[维护] §f服务器将在 §b{remaining} §f后重启（§b{time}§f）" },
+    { "advance_time": "10m", "type": "title", "title": "§e重启倒计时", "subtitle": "§f剩余 §b{remaining}",
       "times": { "fade_in": 0.5, "stay": 3, "fade_out": 0.5 },
       "sound": "minecraft:block.note_block.pling" },
-    { "advance_seconds": 60, "type": "actionbar", "message": "§c60 秒后重启" },
-    { "advance_seconds": 10, "type": "title", "title": "§c马上重启！", "subtitle": "§f快找地方下线" },
-    { "advance_seconds": 0,  "type": "chat",  "message": "§c[维护] §f服务器正在重启，请稍后重新连接" }
+    { "advance_time": 60, "type": "actionbar", "message": "§c60 秒后重启" },
+    { "advance_time": 10, "type": "title", "title": "§c马上重启！", "subtitle": "§f快找地方下线" },
+    { "advance_time": 0,  "type": "chat",  "message": "§c[维护] §f服务器正在重启，请稍后重新连接" }
   ]
 }
 ```
@@ -234,15 +210,24 @@ mcdr-scheduled-restart/
 
 ## 指令与权限
 
-根指令：`!!srestart`（`!!srestart help` 查看帮助）。查看类需要 **helper**，操作类需要 **admin**；控制台默认为最高权限。
+根指令：`!!srestart`（`!!srestart help` 查看帮助）。所有玩家都能查看计划列表与下次重启时间；
+`status` / `history` 需要 **helper**；变更类指令需要 **admin**；控制台默认为最高权限。
+
+如果你的配置文件设置了 `command_alias`（例如 `"!!sr"`），则 `!!sr` 与 `!!srestart` 完全等价，
+帮助信息、Tab 补全、权限检查都同时生效。
+
+> **Minecraft 的 `/op` 不等于 MCDR 的 admin**。MCDR 有自己独立的权限系统，
+> 默认情况下 Minecraft op 玩家并不会自动获得 admin 权限。
+> 如果你希望某个玩家能使用变更类指令，请在控制台执行：
+> `!!MCDR permission set <玩家名> admin`。
 
 计划统一用 **序号** 指代（`!!srestart list` 里显示的 `[#1]`、`[#2]`…），也兼容直接写计划名；
 序号就是配置文件 `schedules` 数组的下标 +1，即使某条计划写错被跳过也不会错位。
 
 | 指令 | 权限 | 说明 |
 | --- | --- | --- |
-| `!!srestart list` | helper | 所有计划：序号、开关状态、cron、中文描述、下次重启时间与剩余时间、提醒条数 |
-| `!!srestart next` | helper | 下一次重启的时间与倒计时 |
+| `!!srestart list` | 所有玩家 | 所有计划：序号、开关状态、cron、中文描述、下次重启时间与剩余时间、提醒条数 |
+| `!!srestart next` | 所有玩家 | 下一次重启的时间与倒计时 |
 | `!!srestart status` | helper | 总开关、调度线程、时区、当前计划、配置警告/错误 |
 | `!!srestart history [条数]` | helper | 最近的重启记录（时间 / 计划 / 方式 / 自动或手动） |
 | `!!srestart test <序号\|计划名>` | admin | 按提前量依次发送该计划的提醒，**不会重启**，用于预览 |
@@ -318,7 +303,7 @@ execute as @a at @s run playsound <音效> master @s ~ ~ ~ <音量> <音调>
 用 `"sound_position": "~ ~ ~"` + `"sound_source": ""`：
 
 ```json
-{ "advance_seconds": 30, "type": "title", "title": "§e重启倒计时",
+{ "advance_time": 30, "type": "title", "title": "§e重启倒计时",
   "sound": "minecraft:block.note_block.pling",
   "sound_source": "", "sound_position": "~ ~ ~" }
 ```
@@ -364,7 +349,7 @@ uv venv --python 3.13 .venv
 uv pip install --python .venv/Scripts/python.exe mcdreforged pytest     # Windows
 # uv pip install --python .venv/bin/python mcdreforged pytest           # Linux
 
-# 跑测试（216 个用例：cron 解析、配置容错、配置文件读改写、提醒渲染、调度时序、指令树、打包结构、插件生命周期）
+# 跑测试（231 个用例：cron 解析、配置容错、配置文件读改写、配置自动升级、提醒渲染、调度时序、指令树、打包结构、插件生命周期）
 .venv/Scripts/python.exe -m pytest -q
 
 # 重新生成示例配置 / 打包插件
@@ -375,6 +360,31 @@ uv pip install --python .venv/Scripts/python.exe mcdreforged pytest     # Window
 单元测试用假服务器接口（`tests/fakes.py`）驱动真实的调度逻辑与 **MCDR 自己的指令解析器**，
 并用 MCDR 的元数据校验器、`zipimport` 验证 `.mcdr` 包的合法性；
 调度部分的时间全部来自可注入的时钟，测试是确定性的（不依赖真实等待）。
+
+---
+
+## 目录结构
+
+```
+mcdr-scheduled-restart/
+├── src/                            # 插件本体（打包成 .mcdr 或直接放进 plugins/）
+│   ├── mcdreforged.plugin.json     # 插件元数据
+│   └── scheduled_restart/
+│       ├── __init__.py             # MCDR 入口（on_load / on_unload / on_player_joined）
+│       ├── cron.py                 # cron 解析、下次触发时间、中文描述
+│       ├── config.py               # 配置默认值、校验、容错、读取前处理（去 BOM / 坏文件备份）
+│       ├── config_store.py         # 配置文件读改写（enable / disable / add / remove 指令用）
+│       ├── notify.py               # 提醒渲染与发送
+│       ├── scheduler.py            # 调度线程、倒计时状态机、重启执行、历史记录
+│       └── command.py              # !!srestart 指令树
+├── examples/config.json            # 生成出来的默认配置
+├── tests/                          # 231 个单元测试
+├── e2e/                            # 真实 MCDR 端到端测试（模拟服务端、测试驱动插件、实测证据）
+├── tools/build_plugin.py           # 打包 .mcdr
+├── tools/generate_example_config.py
+├── CHANGELOG.md                    # 更新日志
+└── LICENSE                         # GPL-3.0
+```
 
 ---
 
@@ -390,7 +400,7 @@ uv pip install --python .venv/Scripts/python.exe mcdreforged pytest     # Window
 
 ```bash
 python tools/build_plugin.py
-# 已生成插件包: dist/scheduled_restart-v1.1.1.mcdr（35530 字节）
+# 已生成插件包: dist/scheduled_restart-v1.2.1.mcdr（35530 字节）
 # sha256: c32e93f8f09b1f4d0ed351be4fcbb18579416d77187d60d08c44813b23855284
 ```
 
@@ -422,7 +432,7 @@ python tools/build_plugin.py -s other/src -o build/x.mcdr # 指定源码目录 +
 > 如果打成 `src/scheduled_restart/...` 这种多了一层 `src/` 的结构，MCDR 会直接报
 > `IllegalPluginStructure` 拒绝加载。
 
-### 不用脚本，手工打包
+### 手工打包
 
 `.mcdr` 就是一个普通 zip，手工打包也可以，只要结构对。**注意手工打包不会自动跳过
 `__pycache__`，打包前先删掉它**，否则会把这些缓存文件一起塞进包里：
@@ -444,18 +454,12 @@ Compress-Archive -Path * -DestinationPath ..\dist\scheduled_restart.mcdr -Force
 打包后确认结构正确：
 
 ```bash
-python -m zipfile -l dist/scheduled_restart-v1.1.1.mcdr
+python -m zipfile -l dist/scheduled_restart-v1.2.1.mcdr
 # 应当只看到：mcdreforged.plugin.json、scheduled_restart/__init__.py、scheduled_restart/*.py
 ```
 
 也可以把扩展名改成 `.zip` 直接用解压软件查看。
 
-### 校验插件包
-
-```bash
-sha256sum dist/scheduled_restart-v1.1.1.mcdr                          # Linux / macOS
-Get-FileHash dist\scheduled_restart-v1.1.1.mcdr -Algorithm SHA256     # Windows PowerShell
-```
 
 把这个值与 Release 说明里公布的 sha256 比对，就能确认下载到的附件没有被改过或损坏。
 
@@ -471,10 +475,10 @@ Get-FileHash dist\scheduled_restart-v1.1.1.mcdr -Algorithm SHA256     # Windows 
 2. **装进 MCDR 看日志**：把 `.mcdr` 放进 `plugins/`，启动后应当看到
 
    ```
-   [MCDR] [TaskExecutor/INFO]: Plugin scheduled_restart@1.1.1 loaded
+   [MCDR] [TaskExecutor/INFO]: Plugin scheduled_restart@1.2.1 loaded
    ```
 
-   并在控制台看到 `[scheduled_restart] v1.1.1 已加载：…`；用 `!!MCDR plugin list` 也能看到它。
+   并在控制台看到 `[scheduled_restart] v1.2.1 已加载：…`；用 `!!MCDR plugin list` 也能看到它。
 
 3. **不想打包**也可以直接用「目录插件」模式调试：把 `src/` 里的内容复制到
    `plugins/scheduled_restart/`，改完代码执行 `!!MCDR plugin reload scheduled_restart` 即可，
@@ -483,49 +487,19 @@ Get-FileHash dist\scheduled_restart-v1.1.1.mcdr -Algorithm SHA256     # Windows 
 ### 发布到 GitHub Release
 
 ```bash
-git tag -a v1.1.1 -m "v1.1.1"
+git tag -a v1.2.1 -m "v1.2.1"
 git push origin main --follow-tags
 
 # 附带插件包发布（装了 GitHub CLI 的话）
-gh release create v1.1.1 dist/scheduled_restart-v1.1.1.mcdr \
-  --title "v1.1.1" --notes-file CHANGELOG.md      # 或 --generate-notes 让 GitHub 自动生成
+gh release create v1.2.1 dist/scheduled_restart-v1.2.1.mcdr \
+  --title "v1.2.1" --notes-file CHANGELOG.md      # 或 --generate-notes 让 GitHub 自动生成
 ```
 
-没有 `gh` 就在网页上操作：**Releases → Draft a new release** → 选 tag `v1.1.1`
-→ 说明可直接复制 [CHANGELOG.md](CHANGELOG.md) 里对应版本的段落 → 上传 `dist\scheduled_restart-v1.1.1.mcdr` → Publish。
+没有 `gh` 就在网页上操作：**Releases → Draft a new release** → 选 tag `v1.2.1`
+→ 说明可直接复制 [CHANGELOG.md](CHANGELOG.md) 里对应版本的段落 → 上传 `dist\scheduled_restart-v1.2.1.mcdr` → Publish。
 
 > 仓库里**不放**构建产物（`dist/` 已被忽略），插件包一律通过 Release 附件分发：
 > 这样每次改代码不会给仓库历史塞进二进制文件，而使用者仍能在 Release 页面直接下载。
-
-## 真实 MCDR 端到端验证
-
-除单元测试外，还用**真实的 MCDReforged 2.16.0 进程**跑了三类场景（工装、原始证据与复现步骤见
-[`e2e/`](e2e/README.md)）。场景 ① 是定时重启全链路（`cron: */20 * * * * *`，两轮重启）：
-
-* 插件在 15:25:29 加载并算出下次重启 `15:25:40`，两条已过期且服务器尚未启动的提醒被正确跳过并给出警告
-* 15:25:32（提前 8 秒）真实下发 `title @a times 10 40 10` → `title @a subtitle [...]` → `title @a title {...}` → `playsound ...`
-* 15:25:36（提前 4 秒）`command` 类提醒真实下发 `say E2E-COMMAND-TEST 4`
-* 15:25:40（到点）下发 `tellraw` 后执行 `stop`，服务端进程退出（code 0）并被 MCDR 重新拉起（新 PID），
-  计划顺延到 `15:26:00`；第二轮提醒同样严格按 15/12/8/4/0 秒提前量发出
-* 插件写下 2 条 `history.jsonl` 记录，`starts.log` 记录到 3 次服务端启动（初次 + 2 次重启）
-
-场景 ② **指令增删改查**——在真实 MCDR 内用 `execute_command` 执行 13 条 `!!srestart` 指令，
-每步之后比对配置文件快照：
-
-* `add` 真的追加计划并立刻参与调度（`已创建计划 #2 凌晨测试（每天 07:00…）`）；重名与坏 cron 都被拒绝且文件不变
-* `disable 1` / `enable 2` 真的改写了 `schedules[i].enabled`，其中 2 号是**配置文件里本来就是关闭**的计划
-* `remove 2` 按序号删对条目，后续 `list` 序号自动前移；`test` 只发提醒不重启
-
-场景 ③ **带 UTF-8 BOM 的配置文件**（Windows 记事本、PowerShell `Set-Content -Encoding UTF8` 的默认行为）：
-
-* 修复前实测：MCDR 读取失败 → 按 `regen` 策略把**用户配置重置成默认的示例计划**（计划直接丢失；
-  当时的默认配置里有 3 个示例，现在是 1 个）
-* 修复后：读取前自动去 BOM，用户计划完整保留（`初始配置: [('BOM保留测试', True), ('计划里就是关闭的', False)]`）；
-  文件彻底坏掉时会先备份成 `config.json.broken-<时间>` 再重新生成
-
-> 小提示：MCDR 的日志文件 `logs/MCDR.log` 主要记录 MCDR 自身的消息，插件日志打在控制台；
-> 想事后查证「哪次重启、什么时候、手动还是自动」，看 `config/scheduled_restart/history.jsonl`
-> 或执行 `!!srestart history` 更直接。
 
 ---
 
@@ -533,7 +507,7 @@ gh release create v1.1.1 dist/scheduled_restart-v1.1.1.mcdr \
 
 * **单计划调度**：调度线程每 `check_interval_seconds` 醒一次，算出「所有启用计划里最近的一次重启」，
   然后只维护这一个计划；每秒检查有没有到某条提醒的发送时刻。
-* **提醒时刻 = 真正重启时刻 − `advance_seconds`**；`restart_delay_seconds` 会同时推迟提醒基准，
+* **提醒时刻 = 真正重启时刻 − `advance_time`**；`restart_delay_seconds` 会同时推迟提醒基准，
   保证「还有 5 分钟」这类文案始终准确。
 * **重启在独立工作线程里执行**：`server.restart()` 会阻塞到服务器重启完成，
   放在工作线程里不会卡住调度循环；重启期间暂停发送提醒。
@@ -545,50 +519,6 @@ gh release create v1.1.1 dist/scheduled_restart-v1.1.1.mcdr \
 * **改配置的指令直接改文件**：`enable / disable / add / remove` 只改 `schedules` 数组里对应条目的字段，
   你自己加的字段与注释性内容原样保留；写入采用「先写临时文件再替换」；
   读取前会去掉 UTF-8 BOM，文件彻底损坏时先备份成 `config.json.broken-<时间>` 再重新生成。
-
----
-
-## English summary
-
-**scheduled_restart** is an [MCDReforged](https://github.com/MCDReforged/MCDReforged) plugin that
-restarts your Minecraft server on a **Linux cron schedule** and warns players beforehand with
-**chat messages** and/or **on-screen titles**.
-
-* Cron syntax: 5 fields `min hour day month weekday`, or 6 fields with leading seconds.
-  Supports `*` `?` `a-b` `a,b` `*/n` `a-b/n` `a/n`, `JAN`-`DEC`, `SUN`-`SAT`, and macros like `@daily`.
-* Unrestricted number of reminders per schedule, written as an **array of objects**:
-
-  ```json
-  {
-    "name": "Daily restart",
-    "enabled": true,
-    "cron": "0 4 * * *",
-    "use_default_notifications": false,
-    "notifications": [
-      { "advance": "10m", "type": "chat",  "message": "§eServer restarts in §b{remaining}" },
-      { "advance_seconds": 30, "type": "title", "title": "§eRestarting soon", "subtitle": "§f{remaining}" },
-      { "advance_seconds": 0, "type": "chat", "message": "§cRestarting now, please reconnect later" }
-    ]
-  }
-  ```
-
-* Notification types: `chat` / `title` / `actionbar` / `command`. Placeholders:
-  `{remaining}` `{remaining_seconds}` `{remaining_minutes}` `{time}` `{date}` `{datetime}`
-  `{schedule}` `{cron}` `{index}` `{total}`.
-* Restart methods: `mcdr_restart` (default), `stop`, `stop_exit`, `custom`, `none`.
-* In-game commands (view = helper, changes = admin):
-  `!!srestart list|next|status|history`, `!!srestart add <name> <cron>`,
-  `!!srestart remove|enable|disable|test <#index>`, `!!srestart reload|cancel`.
-  To restart the server *right now*, use MCDR's own `!!MCDR server restart`.
-* No third-party Python dependencies; the cron parser is built in.
-* Build the distributable package with `python tools/build_plugin.py` (a `.mcdr` file is just a zip
-  whose root holds `mcdreforged.plugin.json` + the `scheduled_restart/` package; see
-  [打包与发布](#打包与发布)). Build artifacts are attached to GitHub Releases, not committed.
-* Tested with unit tests (216) plus a real MCDReforged end-to-end run — see [`e2e/`](e2e/README.md).
-* Requires MCDReforged >= 2.12.0 and Python >= 3.8.
-
-Runtime messages and the documentation are currently in Chinese; the plugin itself is
-locale-agnostic and every user-facing text is configurable.
 
 ---
 

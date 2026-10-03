@@ -1,6 +1,6 @@
 {
   "id": "scheduled_restart",
-  "version": "1.1.1",
+  "version": "1.2.1",
   "name": "Scheduled Restart",
   "description": {
     "en_us": "Cron-style scheduled server restarts with configurable multi-stage notifications (chat / title)",

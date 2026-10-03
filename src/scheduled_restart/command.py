@@ -37,6 +37,7 @@ __all__ = ['register_commands', 'COMMAND_PREFIX']
 
 COMMAND_PREFIX = '!!srestart'
 
+USER_PERMISSION = PermissionLevel.USER
 VIEW_PERMISSION = PermissionLevel.HELPER
 ADMIN_PERMISSION = PermissionLevel.ADMIN
 
@@ -92,12 +93,14 @@ def register_commands(
         config_provider: Callable[[], Config],
         apply_config: Callable[[], Tuple[bool, str]],
         editor: ConfigFileEditor,
+        command_alias: Optional[str] = None,
 ) -> None:
     """注册 ``!!srestart`` 指令树与帮助信息
 
     :param config_provider: 取当前生效配置
     :param apply_config: 重新读取配置文件并让调度生效，返回 (是否成功, 说明)
     :param editor: 配置文件读改写（enable / disable / add / remove 用）
+    :param command_alias: 可选的自定义简化指令前缀，如 ``!!sr``
     """
 
     guard = _guard(server)
@@ -140,18 +143,20 @@ def register_commands(
             RText(f'{COMMAND_PREFIX} next', RColor.yellow) + _gray('  查看下一次重启倒计时'),
             RText(f'{COMMAND_PREFIX} status', RColor.yellow) + _gray('  查看插件状态与配置问题'),
             RText(f'{COMMAND_PREFIX} history [条数]', RColor.yellow) + _gray('  查看最近的重启记录'),
-            RText(f'{COMMAND_PREFIX} test <序号>', RColor.yellow) + _gray('  只发送该计划的提醒，用于预览'),
-            RText(f'{COMMAND_PREFIX} enable [<序号>|all]', RColor.yellow)
+            RText(f'{COMMAND_PREFIX} test <序号|计划名>', RColor.yellow) + _gray('  只发送该计划的提醒，用于预览'),
+            RText(f'{COMMAND_PREFIX} enable [<序号|计划名>|all]', RColor.yellow)
             + _gray('   启用计划（写入配置文件）'),
-            RText(f'{COMMAND_PREFIX} disable [<序号>|all]', RColor.yellow)
+            RText(f'{COMMAND_PREFIX} disable [<序号|计划名>|all]', RColor.yellow)
             + _gray('  禁用计划（写入配置文件）'),
             RText(f'{COMMAND_PREFIX} add <计划名> <cron>', RColor.yellow)
             + _gray('  新建计划，如 add 每日重启 0 4 * * *'),
-            RText(f'{COMMAND_PREFIX} remove <序号>', RColor.yellow) + _gray('  删除计划'),
+            RText(f'{COMMAND_PREFIX} remove <序号|计划名>', RColor.yellow) + _gray('  删除计划'),
             RText(f'{COMMAND_PREFIX} reload', RColor.yellow) + _gray('  重新读取配置文件'),
             RText(f'{COMMAND_PREFIX} cancel', RColor.yellow) + _gray('  取消当前待执行的重启'),
             _gray('计划用 list 里的序号指代（也可以写计划名）；立刻重启服务器请用 !!MCDR server restart'),
         ]
+        if command_alias:
+            lines.append(_gray(f'简化指令：{command_alias} 与 {COMMAND_PREFIX} 等价'))
         for line in lines:
             source.reply(line)
 
@@ -332,41 +337,76 @@ def register_commands(
 
     # ---------------------------------------------------------------- 组装树
 
-    root = Literal(COMMAND_PREFIX)
-    root.runs(show_help)
+    def _failure_message_forbidden(needed: str, source) -> str:
+        player = getattr(source, 'player', None)
+        if player is not None:
+            return (
+                f'§c[定时重启] 需要 MCDR {needed} 权限§r；'
+                f'Minecraft 的 /op 不等于 MCDR {needed}，'
+                f'请让服主在控制台执行 §7!!MCDR permission set {player} {needed}§r'
+            )
+        return f'§c[定时重启] 需要 {needed} 权限§r'
 
+    user = lambda src: src.has_permission(USER_PERMISSION)  # noqa: E731
     view = lambda src: src.has_permission(VIEW_PERMISSION)  # noqa: E731
     admin = lambda src: src.has_permission(ADMIN_PERMISSION)  # noqa: E731
 
-    root.then(Literal('help').runs(show_help))
-    root.then(Literal('list').requires(view).runs(show_list))
-    root.then(Literal('next').requires(view).runs(show_next))
-    root.then(Literal('status').requires(view).runs(show_status))
+    def build_tree(prefix: str):
+        root = Literal(prefix)
+        root.runs(show_help)
 
-    history_node = Literal('history').requires(view)
-    history_node.runs(lambda src, ctx: show_history(src, {'count': 10}))
-    history_node.then(Integer('count').at_min(1).at_max(200).runs(show_history))
-    root.then(history_node)
+        root.then(Literal('help').runs(show_help))
+        root.then(Literal('list').requires(user).runs(show_list))
+        root.then(Literal('next').requires(user).runs(show_next))
+        root.then(Literal('status').requires(view).runs(show_status))
 
-    root.then(Literal('reload').requires(admin).runs(do_reload))
-    root.then(Literal('cancel').requires(admin).runs(do_cancel))
-    root.then(Literal('test').requires(admin).then(target_node().runs(do_test)))
+        history_node = Literal('history').requires(view)
+        history_node.runs(lambda src, ctx: show_history(src, {'count': 10}))
+        history_node.then(Integer('count').at_min(1).at_max(200).runs(show_history))
+        root.then(history_node)
 
-    enable_node = Literal('enable').requires(admin)
-    enable_node.runs(do_enable)
-    enable_node.then(target_node(include_all=True).runs(do_enable))
-    root.then(enable_node)
+        root.then(
+            Literal('reload')
+            .requires(admin, lambda src, ctx: _failure_message_forbidden('admin', src))
+            .runs(do_reload)
+        )
+        root.then(
+            Literal('cancel')
+            .requires(admin, lambda src, ctx: _failure_message_forbidden('admin', src))
+            .runs(do_cancel)
+        )
+        root.then(
+            Literal('test')
+            .requires(admin, lambda src, ctx: _failure_message_forbidden('admin', src))
+            .then(target_node().runs(do_test))
+        )
 
-    disable_node = Literal('disable').requires(admin)
-    disable_node.runs(do_disable)
-    disable_node.then(target_node(include_all=True).runs(do_disable))
-    root.then(disable_node)
+        enable_node = Literal('enable').requires(admin, lambda src, ctx: _failure_message_forbidden('admin', src))
+        enable_node.runs(do_enable)
+        enable_node.then(target_node(include_all=True).runs(do_enable))
+        root.then(enable_node)
 
-    root.then(
-        Literal('add').requires(admin)
-        .then(QuotableText('name').then(GreedyText('cron').runs(do_add)))
-    )
-    root.then(Literal('remove').requires(admin).then(target_node().runs(do_remove)))
+        disable_node = Literal('disable').requires(admin, lambda src, ctx: _failure_message_forbidden('admin', src))
+        disable_node.runs(do_disable)
+        disable_node.then(target_node(include_all=True).runs(do_disable))
+        root.then(disable_node)
 
-    server.register_command(root)
-    server.register_help_message(COMMAND_PREFIX, '定时重启插件：查看/新建/开关/删除重启计划', permission=VIEW_PERMISSION)
+        root.then(
+            Literal('add')
+            .requires(admin, lambda src, ctx: _failure_message_forbidden('admin', src))
+            .then(QuotableText('name').then(GreedyText('cron').runs(do_add)))
+        )
+        root.then(
+            Literal('remove')
+            .requires(admin, lambda src, ctx: _failure_message_forbidden('admin', src))
+            .then(target_node().runs(do_remove))
+        )
+
+        return root
+
+    help_message = '定时重启插件：查看/新建/开关/删除重启计划'
+    server.register_command(build_tree(COMMAND_PREFIX))
+    server.register_help_message(COMMAND_PREFIX, help_message, permission=USER_PERMISSION)
+    if command_alias:
+        server.register_command(build_tree(command_alias))
+        server.register_help_message(command_alias, help_message, permission=USER_PERMISSION)

@@ -57,8 +57,8 @@ def test_default_config_round_trip():
     again = Config.from_raw(config.to_raw())
     assert again.warnings == [] and again.errors == []
     assert [item.name for item in again.schedules] == [item.name for item in config.schedules]
-    assert [item.advance_seconds for item in again.default_notifications] == \
-           [item.advance_seconds for item in config.default_notifications]
+    assert [item.advance_time for item in again.default_notifications] == \
+           [item.advance_time for item in config.default_notifications]
 
 
 # --------------------------------------------------------------------------- #
@@ -73,8 +73,8 @@ def test_parse_arrays_of_objects():
             'cron': '0 4 * * *',
             'restart_method': 'mcdr_restart',
             'notifications': [
-                {'advance': '5m', 'type': 'chat', 'message': '还有 5 分钟'},
-                {'advance_seconds': 10, 'type': 'title', 'title': '马上重启', 'subtitle': '剩余 {remaining}',
+                {'advance_time': '5m', 'type': 'chat', 'message': '还有 5 分钟'},
+                {'advance_time': 10, 'type': 'title', 'title': '马上重启', 'subtitle': '剩余 {remaining}',
                  'times': {'fade_in': 0.5, 'stay': 2, 'fade_out': 0.5}},
             ],
         },
@@ -91,7 +91,7 @@ def test_parse_arrays_of_objects():
     daily = config.schedules[0]
     assert daily.cron_expression == '0 4 * * *'
     assert daily.use_default_notifications is False
-    assert [item.advance_seconds for item in daily.notifications] == [300.0, 10.0]
+    assert [item.advance_time for item in daily.notifications] == [300.0, 10.0]
     assert daily.notifications[0].type == 'chat'
     assert daily.notifications[1].title == '马上重启'
     assert daily.notifications[1].stay == 2.0
@@ -124,7 +124,7 @@ def test_notification_defaults():
     }]))
     notification = config.schedules[0].notifications[0]
     assert notification.enabled is True
-    assert notification.advance_seconds == 60.0
+    assert notification.advance_time == 60.0
     assert notification.fade_in == 1.0 and notification.stay == 4.0 and notification.fade_out == 1.0
     assert notification.color is None and notification.sound is None
 
@@ -164,10 +164,10 @@ def test_wrong_types_fall_back_with_warning():
             'enabled': 'true',
             'restart_delay_seconds': '30s',
             'notifications': [
-                {'advance_seconds': 'abc', 'type': 'chat', 'message': 'hi'},
-                {'advance_seconds': 60, 'type': '不存在的类型', 'message': 'hi'},
-                {'advance_seconds': 60, 'type': 'title'},
-                {'advance_seconds': 60, 'type': 'chat', 'message': ''},
+                {'advance_time': 'abc', 'type': 'chat', 'message': 'hi'},
+                {'advance_time': 60, 'type': '不存在的类型', 'message': 'hi'},
+                {'advance_time': 60, 'type': 'title'},
+                {'advance_time': 60, 'type': 'chat', 'message': ''},
                 12345,
             ],
         }],
@@ -185,7 +185,7 @@ def test_wrong_types_fall_back_with_warning():
     assert schedule.restart_delay_seconds == 30.0        # "30s" 被正确解析
 
     notifications = schedule.notifications
-    assert [item.advance_seconds for item in notifications] == [60.0, 60.0, 60.0]
+    assert [item.advance_time for item in notifications] == [60.0, 60.0, 60.0]
     assert notifications[0].type == 'chat'
     assert notifications[1].type == 'chat'               # 未知类型回退 chat
     title = [item for item in notifications if item.title][0]
@@ -215,10 +215,10 @@ def test_empty_schedules_warns():
 
 def test_advance_accepts_duration_strings():
     config = Config.from_raw(base_config(default_notifications=[
-        {'advance': '1h', 'type': 'chat', 'message': 'a'},
-        {'advance_seconds': 90, 'type': 'chat', 'message': 'b'},
+        {'advance_time': '1h', 'type': 'chat', 'message': 'a'},
+        {'advance_time': 90, 'type': 'chat', 'message': 'b'},
     ]))
-    assert [item.advance_seconds for item in config.default_notifications] == [3600.0, 90.0]
+    assert [item.advance_time for item in config.default_notifications] == [3600.0, 90.0]
 
 
 # --------------------------------------------------------------------------- #
@@ -241,6 +241,89 @@ def test_load_config_does_not_save_on_errors():
     config = load_config(server)
     assert config.errors
     assert server.saved_config is None
+
+
+# --------------------------------------------------------------------------- #
+#                           配置文件自动升级（新增/删除项）                       #
+# --------------------------------------------------------------------------- #
+
+
+def test_upgrade_config_adds_missing_top_level_keys():
+    from scheduled_restart.config import upgrade_config
+    raw = {'schedules': [{'name': '每日重启', 'cron': '0 4 * * *'}]}
+    upgraded, modified = upgrade_config(raw)
+    assert modified is True
+    assert 'enabled' in upgraded
+    assert 'default_notifications' in upgraded
+    assert '_readme' in upgraded
+    assert upgraded['enabled'] is True
+
+
+def test_upgrade_config_adds_missing_schedule_fields():
+    from scheduled_restart.config import upgrade_config
+    raw = {'schedules': [{'name': '每日重启', 'cron': '0 4 * * *'}]}
+    upgraded, _ = upgrade_config(raw)
+    schedule = upgraded['schedules'][0]
+    assert 'restart_method' in schedule
+    assert 'kick_players' in schedule
+    assert schedule['restart_method'] == 'mcdr_restart'
+    assert schedule['use_default_notifications'] is True
+
+
+def test_upgrade_config_keeps_user_values():
+    from scheduled_restart.config import upgrade_config
+    raw = {
+        'enabled': False,
+        'schedules': [{'name': '我的计划', 'cron': '0 6 * * *', 'restart_method': 'stop'}],
+    }
+    upgraded, modified = upgrade_config(raw)
+    assert modified is True
+    assert upgraded['enabled'] is False
+    assert upgraded['schedules'][0]['name'] == '我的计划'
+    assert upgraded['schedules'][0]['restart_method'] == 'stop'
+
+
+def test_upgrade_config_updates_readme():
+    from scheduled_restart.config import DEFAULT_README, upgrade_config
+    raw = {
+        '_readme': ['旧说明'],
+        'schedules': [{'name': 'x', 'cron': '0 4 * * *'}],
+    }
+    upgraded, modified = upgrade_config(raw)
+    assert modified is True
+    assert upgraded['_readme'] == DEFAULT_README
+
+
+def test_upgrade_config_is_idempotent_for_fresh_config():
+    from scheduled_restart.config import DEFAULT_CONFIG, upgrade_config
+    upgraded, modified = upgrade_config(copy.deepcopy(DEFAULT_CONFIG))
+    assert upgraded == DEFAULT_CONFIG
+    assert modified is False
+
+
+def test_load_config_upgrades_old_config_and_saves():
+    server = FakeServer()
+    old_raw = {'schedules': [{'name': '旧计划', 'cron': '0 4 * * *'}]}
+    server.seed_config_file(old_raw)
+    config = load_config(server)
+    assert config.errors == []
+    assert server.saved_config is not None
+    assert server.saved_config['schedules'][0]['name'] == '旧计划'
+    assert server.saved_config['schedules'][0]['restart_method'] == 'mcdr_restart'
+    assert '_readme' in server.saved_config
+    assert server.saved_config['enabled'] is True
+
+
+def test_load_config_does_not_overwrite_config_with_errors():
+    server = FakeServer()
+    old_raw = {'schedules': [{'name': '坏计划', 'cron': '99 * * * *'}]}
+    server.seed_config_file(old_raw)
+    config = load_config(server)
+    assert config.errors
+    assert server.saved_config is None
+    with open(server.config_file_path, encoding='utf8') as file_handler:
+        saved = json.load(file_handler)
+    assert saved['schedules'][0]['cron'] == '99 * * * *'
 
 
 # --------------------------------------------------------------------------- #

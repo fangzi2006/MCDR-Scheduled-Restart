@@ -4,7 +4,7 @@
 
 * 单独一个守护线程按 ``check_interval_seconds`` 轮询（默认 1 秒），
   每次只维护「最近的一次重启」这一个计划，避免多个计划重叠互相打架。
-* 提醒的发送时间 = 真正重启时刻 - ``advance_seconds``。
+* 提醒的发送时间 = 真正重启时刻 - ``advance_time``。
   计划生成时已经过期的提醒会被标记为跳过（``skip_missed_notifications``），
   这样插件重载 / 服务器刚启动时不会被过期提醒刷屏。
 * 真正的重启动作在独立的「工作线程」里执行，因为 ``server.restart()`` 是阻塞的，
@@ -193,12 +193,12 @@ class RestartScheduler:
         for index, notification in enumerate(notifications):
             if not notification.enabled:
                 continue
-            fire_time = best.restart_time - timedelta(seconds=notification.advance_seconds)
+            fire_time = best.restart_time - timedelta(seconds=notification.advance_time)
             item = PendingNotification(notification=notification, fire_time=fire_time, index=index)
             if self._config.skip_missed_notifications and fire_time < now:
                 item.skipped = True
             best.notifications.append(item)
-        best.notifications.sort(key=lambda item: (-item.notification.advance_seconds, item.index))
+        best.notifications.sort(key=lambda item: (-item.notification.advance_time, item.index))
         return best
 
     def _next_restart_time(self, schedule: Schedule, now: datetime) -> Optional[datetime]:
@@ -230,7 +230,7 @@ class RestartScheduler:
             # 这里直接跳过，避免日志里出现「已发送」这种误导信息
             self._logger.warning(
                 f'[scheduled_restart] 服务器当前未运行，跳过提醒'
-                f'（计划 {plan.schedule.name}，提前 {item.notification.advance_seconds:g} 秒，'
+                f'（计划 {plan.schedule.name}，提前 {item.notification.advance_time:g} 秒，'
                 f'方式 {item.notification.type}）'
             )
             return
@@ -245,7 +245,7 @@ class RestartScheduler:
             )
             self._notifier.send_notification(item.notification, context)
             self._logger.info(
-                f'[scheduled_restart] 已发送提醒（提前 {item.notification.advance_seconds:g} 秒，'
+                f'[scheduled_restart] 已发送提醒（提前 {item.notification.advance_time:g} 秒，'
                 f'方式 {item.notification.type}，计划 {plan.schedule.name}）'
             )
         except Exception:
@@ -364,12 +364,14 @@ class RestartScheduler:
             self._logger.exception('[scheduled_restart] 写入重启历史失败')
 
     def _trim_history(self, path: str) -> None:
+        """按条数裁剪历史记录，避免文件无限增长"""
         try:
-            if os.path.getsize(path) < 256 * 1024:
-                return
             with open(path, encoding='utf8') as file_handler:
                 lines = file_handler.readlines()
-            keep = lines[-max(1, int(self._config.history_size)):]
+            limit = max(1, int(self._config.history_size))
+            if len(lines) <= limit:
+                return
+            keep = lines[-limit:]
             with open(path, 'w', encoding='utf8') as file_handler:
                 file_handler.writelines(keep)
         except OSError:  # pragma: no cover
@@ -539,7 +541,7 @@ class RestartScheduler:
         notifications = [item for item in self._config.notifications_for(schedule) if item.enabled]
         if not notifications:
             return False, f'计划 {schedule.name} 没有启用中的提醒'
-        notifications.sort(key=lambda item: -item.advance_seconds)
+        notifications.sort(key=lambda item: -item.advance_time)
 
         def worker() -> None:
             now = self._clock.now()
@@ -551,7 +553,7 @@ class RestartScheduler:
                     context = build_context(
                         schedule_name=schedule.name + suffix,
                         cron_expression=schedule.cron_expression,
-                        restart_time=now + timedelta(seconds=notification.advance_seconds),
+                        restart_time=now + timedelta(seconds=notification.advance_time),
                         now=now,
                         index=index + 1,
                         total=len(notifications),

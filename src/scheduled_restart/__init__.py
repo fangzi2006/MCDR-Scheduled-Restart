@@ -23,7 +23,7 @@ from .config_store import ConfigFileEditor
 from .scheduler import RestartScheduler
 
 PLUGIN_ID = 'scheduled_restart'
-PLUGIN_VERSION = '1.1.1'
+PLUGIN_VERSION = '1.2.1'
 
 # 注意：这里的全局名不要用 config / scheduler，
 # 否则会遮蔽同名的子模块属性（from scheduled_restart import config 会拿到 None）
@@ -110,10 +110,12 @@ def on_load(server: PluginServerInterface, prev_module) -> None:
         config_provider=get_config,
         apply_config=lambda: _apply_config(server),
         editor=ConfigFileEditor(server),
+        command_alias=_config.command_alias,
     )
     _scheduler.start()
 
-    server.logger.info(f'[{PLUGIN_ID}] v{PLUGIN_VERSION} 已加载：{_describe_schedules(_config)}')
+    alias_hint = f'，简化指令 {_config.command_alias} 已启用' if _config.command_alias else ''
+    server.logger.info(f'[{PLUGIN_ID}] v{PLUGIN_VERSION} 已加载：{_describe_schedules(_config)}{alias_hint}')
     server.logger.info(f'[{PLUGIN_ID}] 使用 !!srestart help 查看指令，配置文件：config/{PLUGIN_ID}/config.json')
     if prev_module is not None:
         server.logger.info(f'[{PLUGIN_ID}] 检测到插件重载，调度已按新配置重新开始')

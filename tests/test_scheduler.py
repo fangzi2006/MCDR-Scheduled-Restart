@@ -27,9 +27,9 @@ def daily_config(notifications=None, *, global_overrides=None, **schedule_overri
         'cron': DAILY,
         'use_default_notifications': False,
         'notifications': [
-            {'advance_seconds': 300, 'type': 'chat', 'message': 'a-{remaining}'},
-            {'advance_seconds': 60, 'type': 'chat', 'message': 'b-{remaining}'},
-            {'advance_seconds': 0, 'type': 'chat', 'message': 'c-{remaining}'},
+            {'advance_time': 300, 'type': 'chat', 'message': 'a-{remaining}'},
+            {'advance_time': 60, 'type': 'chat', 'message': 'b-{remaining}'},
+            {'advance_time': 0, 'type': 'chat', 'message': 'c-{remaining}'},
         ] if notifications is None else notifications,
     }
     schedule.update(schedule_overrides)
@@ -146,8 +146,8 @@ def test_missed_notifications_can_be_forced():
 
 def test_disabled_notification_is_not_sent():
     notifications = [
-        {'advance_seconds': 60, 'type': 'chat', 'message': 'x', 'enabled': False},
-        {'advance_seconds': 0, 'type': 'chat', 'message': 'y'},
+        {'advance_time': 60, 'type': 'chat', 'message': 'x', 'enabled': False},
+        {'advance_time': 0, 'type': 'chat', 'message': 'y'},
     ]
     server, config, clock, scheduler = make_scheduler(daily_config(notifications), datetime(2026, 1, 1, 3, 59, 0))
     scheduler._tick()
@@ -373,6 +373,22 @@ def test_history_can_be_disabled():
     assert scheduler.read_history(5) == []
 
 
+def test_history_is_trimmed_by_count():
+    server, config, clock, scheduler = make_scheduler(daily_config(), datetime(2026, 1, 1, 4, 0))
+    for _ in range(5):
+        scheduler._execute_restart(config.schedules[0], manual=False, actor='')
+        clock.advance(60)
+    assert len(read_history_lines(server)) == 5
+
+    scheduler._config.history_size = 2
+    scheduler._execute_restart(config.schedules[0], manual=False, actor='')
+    lines = read_history_lines(server)
+    assert len(lines) == 2
+    # 保留的是最近两条
+    records = [json.loads(line) for line in lines]
+    assert records[0]['time'] < records[1]['time']
+
+
 def test_history_reader_tolerates_broken_lines():
     server, config, clock, scheduler = make_scheduler(daily_config(), datetime(2026, 1, 1, 4, 0))
     scheduler._execute_restart(config.schedules[0], manual=False, actor='')
@@ -460,7 +476,7 @@ def test_test_notifications_preview():
 
 def test_test_notifications_without_enabled_notification():
     server, config, clock, scheduler = make_scheduler(
-        daily_config([{'advance_seconds': 60, 'type': 'chat', 'message': 'x', 'enabled': False}]),
+        daily_config([{'advance_time': 60, 'type': 'chat', 'message': 'x', 'enabled': False}]),
         datetime(2026, 1, 1, 3, 0),
     )
     ok, message = scheduler.start_notification_test(config.schedules[0])

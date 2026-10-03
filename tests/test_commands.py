@@ -10,6 +10,7 @@ import copy
 import json
 from datetime import datetime
 from types import SimpleNamespace
+from typing import Optional
 
 import pytest
 
@@ -36,15 +37,14 @@ def make_config() -> dict:
             'cron': DAILY,
             'use_default_notifications': False,
             'notifications': [
-                {'advance_seconds': 300, 'type': 'chat', 'message': 'a'},
-                {'advance_seconds': 0, 'type': 'chat', 'message': 'b'},
+                {'advance_time': 300, 'type': 'chat', 'message': 'a'},
+                {'advance_time': 0, 'type': 'chat', 'message': 'b'},
             ],
         }],
     }
 
 
-@pytest.fixture
-def env():
+def _make_env(alias: Optional[str] = None):
     server = FakeServer(make_config())
     server.seed_config_file()
     config = Config.from_raw(server.config_raw)
@@ -67,11 +67,17 @@ def env():
         config_provider=lambda: holder['config'],
         apply_config=apply_config,
         editor=editor,
+        command_alias=alias,
     )
     return SimpleNamespace(
         server=server, scheduler=scheduler, clock=clock, holder=holder,
         root=server.registered_commands[0], applied=applied, editor=editor,
     )
+
+
+@pytest.fixture
+def env():
+    return _make_env()
 
 
 def run(env, command: str, permission: int = PermissionLevel.OWNER):
@@ -93,7 +99,7 @@ def file_schedules(env) -> list:
 def test_command_and_help_are_registered(env):
     assert len(env.server.registered_commands) == 1
     assert env.server.help_messages[0][0] == COMMAND_PREFIX
-    assert env.server.help_messages[0][2] == PermissionLevel.HELPER
+    assert env.server.help_messages[0][2] == PermissionLevel.USER
 
 
 def test_help(env):
@@ -372,6 +378,13 @@ def test_remove_out_of_range_and_all(env):
 @pytest.mark.parametrize('command', [
     f'{COMMAND_PREFIX} list',
     f'{COMMAND_PREFIX} next',
+])
+def test_public_view_commands_are_open_to_all_players(env, command):
+    source, _ = run(env, command, permission=PermissionLevel.USER)
+    assert source.replies
+
+
+@pytest.mark.parametrize('command', [
     f'{COMMAND_PREFIX} status',
     f'{COMMAND_PREFIX} history',
 ])
@@ -413,3 +426,63 @@ def test_suggestions_include_index(env):
     suggestions = env.root._entry_generate_suggestions(source, f'{COMMAND_PREFIX} test ')  # noqa: SLF001
     texts = {item.command for item in suggestions} | {item.suggest_input for item in suggestions}
     assert any('1' == text or '每日重启' in text for text in texts)
+
+
+# --------------------------------------------------------------------------- #
+#                              自定义简化指令别名                                 #
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture
+def env_with_alias():
+    return _make_env(alias='!!sr')
+
+
+def test_alias_command_and_help_are_registered(env_with_alias):
+    env = env_with_alias
+    assert len(env.server.registered_commands) == 2
+    prefixes = {next(iter(node.literals)) for node in env.server.registered_commands}
+    assert prefixes == {COMMAND_PREFIX, '!!sr'}
+    help_prefixes = {item[0] for item in env.server.help_messages}
+    assert help_prefixes == {COMMAND_PREFIX, '!!sr'}
+
+
+def test_alias_works_like_primary(env_with_alias):
+    env = env_with_alias
+    alias_root = env.server.registered_commands[1]
+    source = FakeCommandSource(PermissionLevel.USER, server=env.server)
+    run_command(alias_root, source, '!!sr list')
+    assert '[#1] 每日重启' in source.text()
+
+
+def test_alias_help_mentions_alias(env_with_alias):
+    env = env_with_alias
+    alias_root = env.server.registered_commands[1]
+    source = FakeCommandSource(PermissionLevel.USER, server=env.server)
+    run_command(alias_root, source, '!!sr')
+    assert '简化指令：!!sr 与 !!srestart 等价' in source.text()
+
+
+# --------------------------------------------------------------------------- #
+#                                权限失败提示                                   #
+# --------------------------------------------------------------------------- #
+
+
+def test_admin_failure_message_mentions_mcdr_permission(env):
+    source = FakeCommandSource(PermissionLevel.HELPER, server=env.server, console=False, player='Steve')
+    with pytest.raises(RequirementNotMet) as exc_info:
+        run_command(env.root, source, f'{COMMAND_PREFIX} reload')
+    reason = exc_info.value.get_reason()
+    text = reason.to_plain_text() if hasattr(reason, 'to_plain_text') else str(reason)
+    assert '需要 MCDR admin 权限' in text
+    assert 'Minecraft 的 /op 不等于 MCDR admin' in text
+    assert '!!MCDR permission set Steve admin' in text
+
+
+def test_admin_failure_message_for_console_has_fallback(env):
+    source = FakeCommandSource(PermissionLevel.HELPER, server=env.server, console=False, player='')
+    with pytest.raises(RequirementNotMet) as exc_info:
+        run_command(env.root, source, f'{COMMAND_PREFIX} reload')
+    reason = exc_info.value.get_reason()
+    text = reason.to_plain_text() if hasattr(reason, 'to_plain_text') else str(reason)
+    assert '需要 MCDR admin 权限' in text
