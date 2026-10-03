@@ -1,38 +1,41 @@
 # scheduled_restart · MCDReforged 定时重启插件
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![MCDReforged](https://img.shields.io/badge/MCDReforged-%3E%3D2.12.0-green.svg)](https://github.com/MCDReforged/MCDReforged)
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
-按 **Linux cron 表达式** 定时重启 Minecraft 服务器，并在重启前按你设定的多个时间点，
+![MCDReforged](https://img.shields.io/badge/MCDReforged-%3E%3D2.12.0-green.svg)
+
+## English version: [README_EN.md](README_EN.md) ##
+
+按 **Linux cron 表达式** 定时重启 Minecraft 服务器，并在重启前按你设定的多个时间点，  
 向全服玩家发送 **聊天框消息** 或 **大标题（title/subtitle）** 提醒。
 
-* 主需求：定时自动重启（默认调用 MCDR 的 `restart`，也可以只停服 / 停服并退出 / 执行自定义指令）
-* 按月 / 周 / 日 / 时 / 分任意组合：`0 4 * * *`、`30 3 * * 1`、`0 5 1 * *`、`@daily`……
-* 提醒条数不限，**用「数组里放对象」的写法**，每条提醒自由设置提前时间与通知方式
-* 通知方式：`chat` 聊天框（tellraw）、`title` 大标题、`actionbar` 物品栏上方、`command` 执行任意指令
-* 支持 `§` 旧版颜色代码与 `color` 字段，可选音效，支持占位符
-* 玩家进服时私聊告知倒计时；重启历史落盘；配置热重载；单条坏配置只跳过它自己
-* 纯 Python 实现，**不依赖任何第三方库**，自带 cron 解析器（不装 `croniter`）
-* 计划可直接用指令管理：`list` / `add` / `remove` / `enable` / `disable` / `test`
-
-> English summary is at the [bottom of this README](#english-summary).
+- 主需求：定时自动重启（默认调用 MCDR 的 `restart`，也可以只停服 / 停服并退出 / 执行自定义指令）
+- 按月 / 周 / 日 / 时 / 分任意组合：`0 4 * * *`、`30 3 * * 1`、`0 5 1 * *`、`@daily`……
+- 提醒条数不限，**用「数组里放对象」的写法**，每条提醒自由设置提前时间与通知方式
+- 通知方式：`chat` 聊天框（tellraw）、`title` 大标题、`actionbar` 物品栏上方、`command` 执行任意指令
+- 支持 `§` 旧版颜色代码与 `color` 字段，可选音效，支持占位符
+- 玩家进服时私聊告知倒计时；重启历史落盘；配置热重载；单条坏配置只跳过它自己
+- 纯 Python 实现，**不依赖任何第三方库**，自带 cron 解析器（不装 `croniter`）
+- 计划可直接用指令管理：`list` / `add` / `remove` / `enable` / `disable` / `test`
 
 ---
 
 ## 下载与安装
 
-**方式一：下载插件包（推荐）**
+**方式一：用 MCDR 命令安装（推荐）**
 
-到 [Releases](../../releases/latest) 页面下载 `scheduled_restart-v<版本>.mcdr`，放进 MCDR 的
-`plugins/` 目录，重启 MCDR 或执行 `!!MCDR plugin load <文件名>`。
+在 MCDR 控制台或游戏里执行（需要 admin 权限）：
 
-**方式二：用源码自己打包**
-
-```bash
-git clone https://github.com/fangzi2006/mcdr-scheduled-restart.git
-cd mcdr-scheduled-restart
-python tools/build_plugin.py          # 生成 dist/scheduled_restart-v1.2.1.mcdr
 ```
+!!MCDR plugin install scheduled_restart
+```
+
+装完后执行 `!!MCDR plugin reload scheduled_restart` 或重启 MCDR 即可生效。
+
+**方式二：下载插件包**
+
+到 [Releases](../../releases/latest) 页面下载 `scheduled_restart-v<版本>.mcdr`，放进 MCDR 的  
+`plugins/` 目录，重启 MCDR 或执行 `!!MCDR plugin load <文件名>`。
 
 **方式三：目录插件**
 
@@ -45,7 +48,7 @@ plugins/scheduled_restart/scheduled_restart/__init__.py
 
 首次加载后会自动生成配置：`config/scheduled_restart/config.json`（内容见 [examples/config.json](examples/config.json)）。
 
-> 默认配置里就 1 个示例计划、而且它是 `"enabled": false` 的，**开箱不会自己重启**；改完用 `!!srestart reload` 生效，
+> 默认配置里就 1 个示例计划、而且它是 `"enabled": false` 的，**开箱不会自己重启**；改完用 `!!srestart reload` 生效，  
 > 或者直接用 `!!srestart add <名字> <cron>` 新建一个计划。
 
 ---
@@ -53,7 +56,6 @@ plugins/scheduled_restart/scheduled_restart/__init__.py
 ## 快速开始
 
 1. 编辑 `config/scheduled_restart/config.json`，把示例计划的 `enabled` 改成 `true`，或照抄一份改 `cron`：
-
    ```json
    {
      "name": "每天凌晨4点重启",
@@ -63,10 +65,8 @@ plugins/scheduled_restart/scheduled_restart/__init__.py
      "use_default_notifications": true
    }
    ```
-
 2. 在游戏里或控制台执行 `!!srestart reload`（需要 admin 权限）。
-
-3. 执行 `!!srestart list` 确认「下次重启时间」，执行 `!!srestart test <序号>`
+3. 执行 `!!srestart list` 确认「下次重启时间」，执行 `!!srestart test <序号>`  
    可以立刻预览这套提醒在游戏里长什么样（不会真的重启）。
 
 ---
@@ -75,62 +75,62 @@ plugins/scheduled_restart/scheduled_restart/__init__.py
 
 ### 顶层字段
 
-| 字段 | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- |
-| `enabled` | bool | `true` | 插件总开关，`false` 时完全不调度 |
-| `timezone` | string \| null | `null` | 时区，如 `"Asia/Shanghai"`；`null` 表示跟随 MCDR 进程的本地时区 |
-| `check_interval_seconds` | number | `1.0` | 调度线程轮询间隔（秒），一般不用改 |
-| `skip_missed_notifications` | bool | `true` | 计划生成时已经过期的提醒是否跳过（避免重载后补发一堆过期提醒） |
-| `notify_on_join` | bool | `true` | 玩家进服时是否私聊告知重启倒计时 |
-| `join_message` | string | 见示例 | 进服私聊内容，支持占位符 |
-| `log_history` | bool | `true` | 是否把每次重启写入 `config/scheduled_restart/history.jsonl` |
-| `history_size` | int | `100` | 历史文件过大时保留的最近条数 |
-| `command_alias` | string | `""` | 自定义简化指令前缀，如 `"!!sr"`；留空则只保留 `!!srestart` |
-| `default_notifications` | array | 1 条示例 | **默认提醒组**，计划里 `use_default_notifications: true` 时使用 |
-| `schedules` | array | 3 个示例 | 重启计划列表 |
-| `_readme` | array | — | 写在配置文件里的说明，仅供阅读，可随意修改（JSON 不支持注释，所以说明放在这个字段里；配置文件里的示例都已写成不需要转义的纯文本） |
+| 字段                          | 类型            | 默认值    | 说明                                                                  |
+| --------------------------- | ------------- | ------ | ------------------------------------------------------------------- |
+| `enabled`                   | bool          | `true` | 插件总开关，`false` 时完全不调度                                                |
+| `timezone`                  | string | null | `null` | 时区，如 `"Asia/Shanghai"`；`null` 表示跟随 MCDR 进程的本地时区                     |
+| `check_interval_seconds`    | number        | `1.0`  | 调度线程轮询间隔（秒），一般不用改                                                   |
+| `skip_missed_notifications` | bool          | `true` | 计划生成时已经过期的提醒是否跳过（避免重载后补发一堆过期提醒）                                     |
+| `notify_on_join`            | bool          | `true` | 玩家进服时是否私聊告知重启倒计时                                                    |
+| `join_message`              | string        | 见示例    | 进服私聊内容，支持占位符                                                        |
+| `log_history`               | bool          | `true` | 是否把每次重启写入 `config/scheduled_restart/history.jsonl`                  |
+| `history_size`              | int           | `100`  | 历史文件过大时保留的最近条数                                                      |
+| `command_alias`             | string        | `""`   | 自定义简化指令前缀，如 `"!!sr"`；留空则只保留 `!!srestart`                            |
+| `default_notifications`     | array         | 1 条示例  | **默认提醒组**，计划里 `use_default_notifications: true` 时使用                 |
+| `schedules`                 | array         | 3 个示例  | 重启计划列表                                                              |
+| `_readme`                   | array         | —      | 写在配置文件里的说明，仅供阅读，可随意修改（JSON 不支持注释，所以说明放在这个字段里；配置文件里的示例都已写成不需要转义的纯文本） |
 
 ### `schedules[]`（计划）
 
-| 字段 | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- |
-| `name` | string | `计划N` | 计划名，指令里也可以用序号代替；重名会自动加 `#2` |
-| `enabled` | bool | `true` | 该计划是否启用 |
-| `cron` | string | 必填 | cron 表达式，见下节 |
-| `restart_method` | string | `mcdr_restart` | `mcdr_restart` / `stop` / `stop_exit` / `custom` / `none` |
-| `custom_command` | string | `stop` | `restart_method=custom` 时下发的服务端指令 |
-| `custom_auto_start` | bool | `false` | `custom` 模式下，等服务器停止后是否自动 `start()` |
-| `restart_delay_seconds` | number | `0` | 到点后再延迟多少秒真正重启（支持 `"30s"`、`"1m"` 写法）；**提醒以真正重启的时刻为基准** |
-| `kick_players` | bool | `false` | 重启前是否先 `kick @a` 踢人（1.20.3+ 才支持 `@a` 选择器） |
-| `kick_message` | string | 见示例 | 踢人提示语 |
-| `use_default_notifications` | bool | `true` | `true` 用顶层 `default_notifications`；`false` 用本计划的 `notifications` |
-| `notifications` | array | `[]` | 本计划专属提醒；写了这个数组但没写 `use_default_notifications` 时，自动视为 `false` |
+| 字段                          | 类型     | 默认值            | 说明                                                               |
+| --------------------------- | ------ | -------------- | ---------------------------------------------------------------- |
+| `name`                      | string | `计划N`          | 计划名，指令里也可以用序号代替；重名会自动加 `#2`                                      |
+| `enabled`                   | bool   | `true`         | 该计划是否启用                                                          |
+| `cron`                      | string | 必填             | cron 表达式，见下节                                                     |
+| `restart_method`            | string | `mcdr_restart` | `mcdr_restart` / `stop` / `stop_exit` / `custom` / `none`        |
+| `custom_command`            | string | `stop`         | `restart_method=custom` 时下发的服务端指令                                |
+| `custom_auto_start`         | bool   | `false`        | `custom` 模式下，等服务器停止后是否自动 `start()`                               |
+| `restart_delay_seconds`     | number | `0`            | 到点后再延迟多少秒真正重启（支持 `"30s"`、`"1m"` 写法）；**提醒以真正重启的时刻为基准**            |
+| `kick_players`              | bool   | `false`        | 重启前是否先 `kick @a` 踢人（1.20.3+ 才支持 `@a` 选择器）                        |
+| `kick_message`              | string | 见示例            | 踢人提示语                                                            |
+| `use_default_notifications` | bool   | `true`         | `true` 用顶层 `default_notifications`；`false` 用本计划的 `notifications` |
+| `notifications`             | array  | `[]`           | 本计划专属提醒；写了这个数组但没写 `use_default_notifications` 时，自动视为 `false`     |
 
 `restart_method` 说明：
 
-* `mcdr_restart`：调用 MCDR 的 `server.restart()`（软停服 → 等待 → 重新启动），MCDR 进程保持运行
-* `stop`：只下发停服指令，MCDR 继续运行（适合自己有用进程守护/编排重启的场景）
-* `stop_exit`：停服后让 MCDR 一起退出（适合交给 systemd 等守护进程拉起）
-* `custom`：执行 `custom_command`，可选 `custom_auto_start`
-* `none`：只发提醒不重启（可用于「提前预告维护」）
+- `mcdr_restart`：调用 MCDR 的 `server.restart()`（软停服 → 等待 → 重新启动），MCDR 进程保持运行
+- `stop`：只下发停服指令，MCDR 继续运行（适合自己有用进程守护/编排重启的场景）
+- `stop_exit`：停服后让 MCDR 一起退出（适合交给 systemd 等守护进程拉起）
+- `custom`：执行 `custom_command`，可选 `custom_auto_start`
+- `none`：只发提醒不重启（可用于「提前预告维护」）
 
 ### `notifications[]`（提醒）
 
-| 字段 | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- |
-| `enabled` | bool | `true` | 是否启用这条提醒 |
-| `advance_time` | number \| string | `60` | 提前多久发送；支持数字秒数，也支持 `"5m"`、`"1h30m"`、`"1天2小时"` 这类时长文本 |
-| `type` | string | `chat` | `chat`（聊天框）/ `title`（大标题）/ `actionbar` / `command` |
-| `message` | string | `""` | `chat` / `actionbar` 的文本 |
-| `title` | string | `""` | `title` 的主标题 |
-| `subtitle` | string | `""` | `title` 的副标题 |
-| `times` | object | `{"fade_in":1,"stay":4,"fade_out":1}` | 大标题的淡入/停留/淡出时间，**单位秒**（内部换算成 tick） |
-| `color` | string \| null | `null` | 颜色名（`yellow`、`red`、`gold`…）或 `#RRGGBB`；也可以直接写在文本里用 `§e` |
-| `sound` | string \| null | `null` | 音效 ID，如 `minecraft:block.note_block.pling`，会在提醒后播放 |
-| `sound_source` | string | `master` | 音效频道；老版本（1.8~1.12）服务端可设为 `""` 以省略该参数 |
-| `sound_position` | string | `"@s"` | 音效播放位置：`"@s"` = 每个玩家在自己位置听到（1.13+，用 `execute as @a at @s` 实现）；坐标文本（`"~ ~ ~"`、`"100 64 100"`）= 固定位置播放（1.8+ 都能用，`~ ~ ~` 在控制台执行时等于世界出生点）；`""` = 省略坐标与音量音调 |
-| `sound_volume` / `sound_pitch` | number | `1.0` | 音量 / 音调（`sound_position` 为空时这两项会被忽略） |
-| `command` | string | `""` | `type=command` 时下发的指令，支持占位符 |
+| 字段                             | 类型              | 默认值                                   | 说明                                                                                                                                                     |
+| ------------------------------ | --------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `enabled`                      | bool            | `true`                                | 是否启用这条提醒                                                                                                                                               |
+| `advance_time`                 | number | string | `60`                                  | 提前多久发送；支持数字秒数，也支持 `"5m"`、`"1h30m"`、`"1天2小时"` 这类时长文本                                                                                                    |
+| `type`                         | string          | `chat`                                | `chat`（聊天框）/ `title`（大标题）/ `actionbar` / `command`                                                                                                     |
+| `message`                      | string          | `""`                                  | `chat` / `actionbar` 的文本                                                                                                                               |
+| `title`                        | string          | `""`                                  | `title` 的主标题                                                                                                                                           |
+| `subtitle`                     | string          | `""`                                  | `title` 的副标题                                                                                                                                           |
+| `times`                        | object          | `{"fade_in":1,"stay":4,"fade_out":1}` | 大标题的淡入/停留/淡出时间，**单位秒**（内部换算成 tick）                                                                                                                     |
+| `color`                        | string | null   | `null`                                | 颜色名（`yellow`、`red`、`gold`…）或 `#RRGGBB`；也可以直接写在文本里用 `§e`                                                                                                |
+| `sound`                        | string | null   | `null`                                | 音效 ID，如 `minecraft:block.note_block.pling`，会在提醒后播放                                                                                                     |
+| `sound_source`                 | string          | `master`                              | 音效频道；老版本（1.8~1.12）服务端可设为 `""` 以省略该参数                                                                                                                   |
+| `sound_position`               | string          | `"@s"`                                | 音效播放位置：`"@s"` = 每个玩家在自己位置听到（1.13+，用 `execute as @a at @s` 实现）；坐标文本（`"~ ~ ~"`、`"100 64 100"`）= 固定位置播放（1.8+ 都能用，`~ ~ ~` 在控制台执行时等于世界出生点）；`""` = 省略坐标与音量音调 |
+| `sound_volume` / `sound_pitch` | number          | `1.0`                                 | 音量 / 音调（`sound_position` 为空时这两项会被忽略）                                                                                                                   |
+| `command`                      | string          | `""`                                  | `type=command` 时下发的指令，支持占位符                                                                                                                            |
 
 一个「多条提醒」的完整例子：
 
@@ -159,32 +159,32 @@ plugins/scheduled_restart/scheduled_restart/__init__.py
 
 沿用 Linux cron：**5 个字段** `分 时 日 月 周`；也支持 **6 个字段** `秒 分 时 日 月 周`。
 
-| 写法 | 含义 |
-| --- | --- |
-| `*` / `?` | 任意值 |
-| `5` | 具体值 |
-| `1-10` | 范围 |
-| `1,3,5` | 列表 |
-| `*/15` | 步长（每 15 分钟） |
-| `1-10/2` | 范围内步长 |
-| `5/10` | 从 5 开始、步长 10 直到最大值（cronie 扩展） |
-| `JAN`~`DEC` | 月份英文缩写 |
-| `SUN`~`SAT` | 星期英文缩写；`0` 与 `7` 都表示周日 |
-| `@yearly` / `@monthly` / `@weekly` / `@daily`(`@midnight`) / `@hourly` / `@minutely` | 常用宏 |
+| 写法                                                                                   | 含义                            |
+| ------------------------------------------------------------------------------------ | ----------------------------- |
+| `*` / `?`                                                                            | 任意值                           |
+| `5`                                                                                  | 具体值                           |
+| `1-10`                                                                               | 范围                            |
+| `1,3,5`                                                                              | 列表                            |
+| `*/15`                                                                               | 步长（每 15 分钟）                   |
+| `1-10/2`                                                                             | 范围内步长                         |
+| `5/10`                                                                               | 从 5 开始、步长 10 直到最大值（cronie 扩展） |
+| `JAN`~`DEC`                                                                          | 月份英文缩写                        |
+| `SUN`~`SAT`                                                                          | 星期英文缩写；`0` 与 `7` 都表示周日        |
+| `@yearly` / `@monthly` / `@weekly` / `@daily`(`@midnight`) / `@hourly` / `@minutely` | 常用宏                           |
 
 常用示例：
 
-| cron | 含义 |
-| --- | --- |
-| `0 4 * * *` | 每天 04:00 |
-| `30 3 * * 1` | 每周一 03:30 |
-| `0 5 1 * *` | 每月 1 日 05:00 |
-| `0 0 1 1 *` | 每年 1 月 1 日 00:00 |
-| `0 */6 * * *` | 每 6 小时（0、6、12、18 点） |
-| `0 4 * * 1,4` | 每周一、周四 04:00 |
-| `0 4 1 * 1` | 每月 1 日 **或** 每周一 04:00（日与周同时限定时取「或」，与 cron 惯例一致） |
-| `30 0 4 * * *` | 6 字段写法：每天 04:00:30 |
-| `@daily` | 每天 00:00 |
+| cron           | 含义                                               |
+| -------------- | ------------------------------------------------ |
+| `0 4 * * *`    | 每天 04:00                                         |
+| `30 3 * * 1`   | 每周一 03:30                                        |
+| `0 5 1 * *`    | 每月 1 日 05:00                                     |
+| `0 0 1 1 *`    | 每年 1 月 1 日 00:00                                 |
+| `0 */6 * * *`  | 每 6 小时（0、6、12、18 点）                              |
+| `0 4 * * 1,4`  | 每周一、周四 04:00                                     |
+| `0 4 1 * 1`    | 每月 1 日 **或** 每周一 04:00（日与周同时限定时取「或」，与 cron 惯例一致） |
+| `30 0 4 * * *` | 6 字段写法：每天 04:00:30                               |
+| `@daily`       | 每天 00:00                                         |
 
 `!!srestart list` 会把每个表达式翻译成中文（例如 `每天 04:00`、`每周一 03:30`），方便核对。
 
@@ -194,49 +194,49 @@ plugins/scheduled_restart/scheduled_restart/__init__.py
 
 写在 `message` / `title` / `subtitle` / `command` / `join_message` 里，发送时替换：
 
-| 占位符 | 含义 | 示例 |
-| --- | --- | --- |
-| `{remaining}` | 中文剩余时长 | `5分`、`1小时2分3秒` |
-| `{remaining_seconds}` | 剩余秒数（整数） | `300` |
-| `{remaining_minutes}` | 剩余分钟数（向上取整） | `5` |
-| `{time}` | 重启时刻 | `04:00:00` |
-| `{date}` | 重启日期 | `2026-07-22` |
-| `{datetime}` | 完整时刻 | `2026-07-22 04:00:00` |
-| `{schedule}` | 计划名 | `每天凌晨4点重启` |
-| `{cron}` | cron 表达式 | `0 4 * * *` |
-| `{index}` / `{total}` | 这是第几条提醒 / 共几条 | `2` / `5` |
+| 占位符                   | 含义            | 示例                    |
+| --------------------- | ------------- | --------------------- |
+| `{remaining}`         | 中文剩余时长        | `5分`、`1小时2分3秒`        |
+| `{remaining_seconds}` | 剩余秒数（整数）      | `300`                 |
+| `{remaining_minutes}` | 剩余分钟数（向上取整）   | `5`                   |
+| `{time}`              | 重启时刻          | `04:00:00`            |
+| `{date}`              | 重启日期          | `2026-07-22`          |
+| `{datetime}`          | 完整时刻          | `2026-07-22 04:00:00` |
+| `{schedule}`          | 计划名           | `每天凌晨4点重启`            |
+| `{cron}`              | cron 表达式      | `0 4 * * *`           |
+| `{index}` / `{total}` | 这是第几条提醒 / 共几条 | `2` / `5`             |
 
 ---
 
 ## 指令与权限
 
-根指令：`!!srestart`（`!!srestart help` 查看帮助）。所有玩家都能查看计划列表与下次重启时间；
+根指令：`!!srestart`（`!!srestart help` 查看帮助）。所有玩家都能查看计划列表与下次重启时间；  
 `status` / `history` 需要 **helper**；变更类指令需要 **admin**；控制台默认为最高权限。
 
-如果你的配置文件设置了 `command_alias`（例如 `"!!sr"`），则 `!!sr` 与 `!!srestart` 完全等价，
+如果你的配置文件设置了 `command_alias`（例如 `"!!sr"`），则 `!!sr` 与 `!!srestart` 完全等价，  
 帮助信息、Tab 补全、权限检查都同时生效。
 
-> **Minecraft 的 `/op` 不等于 MCDR 的 admin**。MCDR 有自己独立的权限系统，
-> 默认情况下 Minecraft op 玩家并不会自动获得 admin 权限。
-> 如果你希望某个玩家能使用变更类指令，请在控制台执行：
+> **Minecraft 的 `/op` 不等于 MCDR 的 admin**。MCDR 有自己独立的权限系统，  
+> 默认情况下 Minecraft op 玩家并不会自动获得 admin 权限。  
+> 如果你希望某个玩家能使用变更类指令，请在控制台执行：  
 > `!!MCDR permission set <玩家名> admin`。
 
-计划统一用 **序号** 指代（`!!srestart list` 里显示的 `[#1]`、`[#2]`…），也兼容直接写计划名；
+计划统一用 **序号** 指代（`!!srestart list` 里显示的 `[#1]`、`[#2]`…），也兼容直接写计划名；  
 序号就是配置文件 `schedules` 数组的下标 +1，即使某条计划写错被跳过也不会错位。
 
-| 指令 | 权限 | 说明 |
-| --- | --- | --- |
-| `!!srestart list` | 所有玩家 | 所有计划：序号、开关状态、cron、中文描述、下次重启时间与剩余时间、提醒条数 |
-| `!!srestart next` | 所有玩家 | 下一次重启的时间与倒计时 |
-| `!!srestart status` | helper | 总开关、调度线程、时区、当前计划、配置警告/错误 |
-| `!!srestart history [条数]` | helper | 最近的重启记录（时间 / 计划 / 方式 / 自动或手动） |
-| `!!srestart test <序号\|计划名>` | admin | 按提前量依次发送该计划的提醒，**不会重启**，用于预览 |
-| `!!srestart enable [<序号\|计划名>\|all]` | admin | 启用计划并**写入配置文件**（立即生效） |
-| `!!srestart disable [<序号\|计划名>\|all]` | admin | 禁用计划并**写入配置文件**（立即生效）；不带参数表示全部 |
-| `!!srestart add <计划名> <cron>` | admin | 新建计划：默认启用、使用顶层 `default_notifications` 提醒组 |
-| `!!srestart remove <序号\|计划名>` | admin | 删除计划 |
-| `!!srestart reload` | admin | 重新读取配置文件并重建调度 |
-| `!!srestart cancel` | admin | 取消当前待执行的重启（本次不重启，下次照常） |
+| 指令                                    | 权限     | 说明                                         |
+| ------------------------------------- | ------ | ------------------------------------------ |
+| `!!srestart list`                     | 所有玩家   | 所有计划：序号、开关状态、cron、中文描述、下次重启时间与剩余时间、提醒条数    |
+| `!!srestart next`                     | 所有玩家   | 下一次重启的时间与倒计时                               |
+| `!!srestart status`                   | helper | 总开关、调度线程、时区、当前计划、配置警告/错误                   |
+| `!!srestart history [条数]`             | helper | 最近的重启记录（时间 / 计划 / 方式 / 自动或手动）              |
+| `!!srestart test <序号\|计划名>`           | admin  | 按提前量依次发送该计划的提醒，**不会重启**，用于预览               |
+| `!!srestart enable [<序号\|计划名>\|all]`  | admin  | 启用计划并**写入配置文件**（立即生效）                      |
+| `!!srestart disable [<序号\|计划名>\|all]` | admin  | 禁用计划并**写入配置文件**（立即生效）；不带参数表示全部             |
+| `!!srestart add <计划名> <cron>`         | admin  | 新建计划：默认启用、使用顶层 `default_notifications` 提醒组 |
+| `!!srestart remove <序号\|计划名>`         | admin  | 删除计划                                       |
+| `!!srestart reload`                   | admin  | 重新读取配置文件并重建调度                              |
+| `!!srestart cancel`                   | admin  | 取消当前待执行的重启（本次不重启，下次照常）                     |
 
 几个例子：
 
@@ -250,42 +250,43 @@ plugins/scheduled_restart/scheduled_restart/__init__.py
 !!srestart remove 2                                # 删除 2 号计划
 ```
 
-序号和计划名都支持 Tab 补全。**想立刻重启服务器请用 MCDR 自带的 `!!MCDR server restart`**
+序号和计划名都支持 Tab 补全。**想立刻重启服务器请用 MCDR 自带的 `!!MCDR server restart`**  
 （本插件专注于"按时重启"，不再重复提供立刻重启的指令）。
 
-> `add` 只要求「名字 + cron」：新建出来的计划默认启用、使用顶层默认提醒组；
-> 想让某条计划用自己的提醒，编辑配置文件里的 `notifications` 并把
+> `add` 只要求「名字 + cron」：新建出来的计划默认启用、使用顶层默认提醒组；  
+> 想让某条计划用自己的提醒，编辑配置文件里的 `notifications` 并把  
 > `use_default_notifications` 改成 `false` 即可。
 >
-> `enable` / `disable` 是**改配置文件**的（持久），不是只对本次运行生效；
-> 它直接操作 `schedules` 数组里对应条目的 `enabled` 字段，其它内容（你自己加的字段、
+> `enable` / `disable` 是**改配置文件**的（持久），不是只对本次运行生效；  
+> 它直接操作 `schedules` 数组里对应条目的 `enabled` 字段，其它内容（你自己加的字段、  
 > 注释性的 `_readme` 等）原样保留。所以配置文件里本来就是关闭的计划也能被打开。
 
 ---
 
 ## 常见问题
 
-**Q：为什么默认配置里所有计划都是关的？**
+**Q：为什么默认配置里所有计划都是关的？**  
 避免装上插件后服务器在你没准备好的时候突然重启。改完 `enabled` 再 `reload` 即可。
 
-**Q：`{remaining}` 显示的时间和实际差几秒？**
+**Q：`{remaining}` 显示的时间和实际差几秒？**  
 调度精度是 `check_interval_seconds`（默认 1 秒），提醒按「到点即发」处理，正常误差在 1 秒内。
 
-**Q：插件重载 / 服务器重启后，过去的提醒会补发吗？**
-默认不会（`skip_missed_notifications: true`）。例如 3:59 才启动插件而计划 4:00 重启，
+**Q：插件重载 / 服务器重启后，过去的提醒会补发吗？**  
+默认不会（`skip_missed_notifications: true`）。例如 3:59 才启动插件而计划 4:00 重启，  
 5 分钟和 1 分钟的提醒会被标记为「已过期」跳过，只发还来得及的那几条；设为 `false` 则会立刻补发。
 
-**Q：`timezone` 在 Windows 上无效？**
-Windows 自带的时区数据库 Python 读不到，需要 `pip install tzdata` 才能使用 `"Asia/Shanghai"` 这类名字；
+**Q：`timezone` 在 Windows 上无效？**  
+Windows 自带的时区数据库 Python 读不到，需要 `pip install tzdata` 才能使用 `"Asia/Shanghai"` 这类名字；  
 没装时会打印一条警告并自动回退到跟随 MCDR 进程的本地时区。
 
-**Q：`kick_players` 没生效？**
-`kick @a` 需要 Minecraft 1.20.3+；老版本请保持 `false`，让服务器关服时自然踢人，或用
+**Q：`kick_players` 没生效？**  
+`kick @a` 需要 Minecraft 1.20.3+；老版本请保持 `false`，让服务器关服时自然踢人，或用  
 `type: "command"` 的提醒自己下发 `tellraw`/`kickall` 之类的指令。
 
-**Q：`stop` 和 `mcdr_restart` 怎么选？**
-由 MCDR 负责重启选 `mcdr_restart`；如果用 systemd/screen/宝塔等外部守护负责拉起，选 `stop`
+**Q：`stop` 和 `mcdr_restart` 怎么选？**  
+由 MCDR 负责重启选 `mcdr_restart`；如果用 systemd/screen/宝塔等外部守护负责拉起，选 `stop`  
 （或 `stop_exit`，让 MCDR 也退出，避免卡住）。
+
 
 **Q：配了 `sound` 却听不到声音 / 报坐标错误？**
 Java 的 `playsound` 语法是 `playsound <音效> [<频道>] <目标> [<坐标>] [<音量>] [<音调>]`，
